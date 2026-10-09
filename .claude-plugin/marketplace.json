@@ -8,5 +8,18 @@
     "description": "LM Claude Code plugins marketplace",
     "version": "0.1.0"
   },
-  "plugins": []
+  "plugins": [
+    {
+      "name": "dxf-drafting",
+      "source": "./plugins/dxf-drafting",
+      "description": "Profile-driven DXF skill for structural/engineering drawings: inspect, learn office conventions, dimension, annotate, draw sections, audit.",
+      "version": "1.0.0",
+      "category": "engineering",
+      "keywords": [
+        "dxf",
+        "autocad",
+        "structural"
+      ]
+    }
+  ]
 }
