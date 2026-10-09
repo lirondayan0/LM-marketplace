@@ -1,0 +1,12 @@
+{
+  "name": "lm-marketplace",
+  "owner": {
+    "name": "Liron Dayan",
+    "email": "lirondayan0@gmail.com"
+  },
+  "metadata": {
+    "description": "LM Claude Code plugins marketplace",
+    "version": "0.1.0"
+  },
+  "plugins": []
+}
