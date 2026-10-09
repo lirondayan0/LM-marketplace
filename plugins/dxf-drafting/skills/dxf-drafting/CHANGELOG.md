@@ -1,5 +1,6 @@
 # Changelog: what the skill learned, newest first (one line each: date, what, why)
 
+- 2026-10-09: Packaged as plugin `dxf-drafting` in LM-marketplace; added portable setup note + `requirements.txt`; published via `/publish-skill`.
 - 2026-10-03: Save policy changed on user request: update the ORIGINAL file in place (with `.bak` backup first) instead of writing a new copy. Updated SKILL.md, pitfalls #9, cookbook, recipes/INDEX, `dim_section.py` (`-o` still gives a separate copy).
 - 2026-10-03: Restructured into a self-improving skill (SKILL.md = identity, mindset, workflow, self-improvement protocol; `knowledge/`, `conventions/`, `recipes/INDEX.md`, `roadmap`). Why: user wants a generic DXF expert that accumulates knowledge.
 - 2026-10-03: Added `scripts/dxflib.py` (shared helpers incl. `encode`, `diff`, `render_png`) and inspector commands `layers`, `dims`, `dimstyles`, `blocks`, `entity`, `audit`, `diff`, `layouts`. `dim_section.py` now imports from dxflib. Tested on `חתכים.dxf`.
