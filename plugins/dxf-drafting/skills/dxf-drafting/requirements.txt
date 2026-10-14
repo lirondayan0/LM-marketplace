@@ -1,2 +1,3 @@
 ezdxf>=1.3
 matplotlib
+scipy  # optional: exact minimum-line cover in plan_rows.py (greedy fallback without it)

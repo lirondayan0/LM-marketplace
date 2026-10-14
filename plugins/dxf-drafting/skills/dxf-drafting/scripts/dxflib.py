@@ -147,3 +147,44 @@ def dim_angle(d):
         p, q = d.dxf.defpoint2, d.dxf.defpoint3
         return math.degrees(math.atan2(q.y - p.y, q.x - p.x))
     return d.dxf.get('angle', 0) or 0
+
+
+def step_groups(segs, gap_lo=20.0, gap_hi=40.0, tol=1.5, min_lines=3, min_overlap=50.0):
+    """Stair treads / risers drawn as equally spaced PARALLEL straight segments (dicts with c = position across, lo..hi = extent along).
+    Returns [[indices sorted by c], ...] for every run of >= min_lines segments whose neighbours are gap_lo..gap_hi apart (equal within tol) and overlap >= min_overlap.
+    User rule 2026-10-13: a flight of stairs gets ONE overall dimension (first to last step line); the interior step lines are not dimensioned."""
+    order = sorted(range(len(segs)), key=lambda i: segs[i]['c']); groups = []; chain = []
+    def close():
+        if len(chain) >= min_lines: groups.append(list(chain))
+    for i in order:
+        if not chain: chain = [i]; continue
+        g = segs[i]['c'] - segs[chain[-1]]['c']
+        if g < 1.0: continue                                           # duplicate line on the same position
+        prev = segs[chain[-1]]['c'] - segs[chain[-2]]['c'] if len(chain) > 1 else None
+        ov = min(segs[i]['hi'], segs[chain[-1]]['hi']) - max(segs[i]['lo'], segs[chain[-1]]['lo'])
+        if gap_lo <= g <= gap_hi and ov >= min_overlap and (prev is None or abs(g - prev) <= tol): chain.append(i)
+        else: close(); chain = [i]
+    close()
+    return groups
+
+
+def blue_clouds(doc, aci=177, layer='claude'):
+    """bbox (x0, y0, x1, y1) of the user's BLUE clouds on layer 'claude' (user 2026-10-13: a blue cloud marks a staircase drawn on 15_DASHED)"""
+    out = []
+    for e in doc.modelspace().query('LWPOLYLINE'):
+        if e.dxf.layer.lower() == layer and e.dxf.color == aci:
+            xs = [q[0] for q in e.get_points('xy')]; ys = [q[1] for q in e.get_points('xy')]
+            out.append((min(xs), min(ys), max(xs), max(ys)))
+    return out
+
+
+def flight_chains(levels, gap_lo=20.0, gap_hi=40.0, tol=0.6, min_levels=3):
+    """runs of >= min_levels equally spaced levels (tread / riser spacing gap_lo..gap_hi, equal within tol): the step positions of a flight of stairs"""
+    lv = sorted(set(round(v, 1) for v in levels)); out = []; chain = []
+    for v in lv:
+        if chain and not (gap_lo <= v - chain[-1] <= gap_hi and (len(chain) < 2 or abs((v - chain[-1]) - (chain[-1] - chain[-2])) <= tol)):
+            if len(chain) >= min_levels: out.append(chain)
+            chain = [chain[-1]] if chain and gap_lo <= v - chain[-1] <= gap_hi else []
+        chain.append(v)
+    if len(chain) >= min_levels: out.append(chain)
+    return out

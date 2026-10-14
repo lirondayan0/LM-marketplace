@@ -6,12 +6,13 @@
   python dxf_inspect.py FILE layers                  # every defined layer: color, linetype, lock/freeze, usage
   python dxf_inspect.py FILE dims [X0 X1 Y0 Y1]      # every DIMENSION: style, layer, text override, measurement
   python dxf_inspect.py FILE dimstyles               # dimstyle variables that differ from Standard
+  python block_reader.py FILE [--box X0 Y0 X1 Y1] [--name N]   # what each INSERT IS (element group / nested / symbol) - run on any block the user marks
   python dxf_inspect.py FILE blocks                  # block definitions + insert counts + attdefs
   python dxf_inspect.py FILE entity HANDLE           # dump every DXF attribute of one entity
   python dxf_inspect.py FILE audit                   # structural errors + convention smells
   python dxf_inspect.py FILE diff OTHER.dxf          # entities added/removed in OTHER vs FILE (LEARN from before/after)
   python dxf_inspect.py FILE layouts                 # layouts and entity counts
-  python dxf_inspect.py FILE markup                  # the user's markup: red clouds, yellow boxes, white target cells, section cut marks (hat blocks)
+  python dxf_inspect.py FILE markup                  # the user's markup (if a layer 'claude' exists ONLY that layer is listed, any colour): red clouds, yellow boxes, white target cells, section cut marks (hat blocks)
 """
 import os, sys
 for _s in (sys.stdout, sys.stderr): _s.reconfigure(encoding='utf-8', errors='replace')   # Hebrew texts crashed print on a cp125x console
@@ -95,6 +96,16 @@ def audit(doc):
 def markup(doc):
     """List the user's markup so a task can start from it: clouds (what to fix/place), yellow boxes (examples), white cells (targets), cut marks."""
     msp = doc.modelspace(); box = lambda e: bbox.extents([e])
+    if 'claude' in [l.dxf.name.lower() for l in doc.layers]:      # agreement 2026-10-13: ALL user comments are on layer 'claude'; every other cloud is ignored
+        names = {1: 'red', 2: 'yellow', 3: 'green', 4: 'cyan', 5: 'blue', 6: 'magenta', 7: 'white'}; n = 0
+        print("layer 'claude' (the user's markup; other layers' clouds are ignored):")
+        for e in msp:
+            if e.dxf.layer.lower() != 'claude': continue
+            b = box(e); col = e.dxf.color if e.dxf.color != 256 else doc.layers.get(e.dxf.layer).color
+            txt = (e.dxf.text if e.dxftype() == 'TEXT' else e.text if e.dxftype() == 'MTEXT' else '')
+            kind = e.dxftype() + (' cloud' if e.dxftype() == 'LWPOLYLINE' and any(abs(p[4]) > .01 for p in e.get_points('xyseb')) else '')
+            print(f'  {e.dxf.handle} {kind} aci={col}({names.get(col, "114=green" if col == 114 else "?")}) x {b.extmin.x:.0f}..{b.extmax.x:.0f} y {b.extmin.y:.0f}..{b.extmax.y:.0f} {txt!r}'); n += 1
+        print(f'  {n} entities'); return
     def rows(title, items):
         print(title)
         for h, lay, b in items: print(f'  {h} {lay} x {b.extmin.x:.0f}..{b.extmax.x:.0f}  y {b.extmin.y:.0f}..{b.extmax.y:.0f}  ({b.size.x:.0f} x {b.size.y:.0f})')

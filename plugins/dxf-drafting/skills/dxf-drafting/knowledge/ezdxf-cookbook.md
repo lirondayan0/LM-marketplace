@@ -62,3 +62,5 @@ Use to bring layers/styles/blocks (e.g. from `שכבות.dxf`) into a target fil
 - Solid rebar dot = closed 2-point LWPOLYLINE with bulge 1 and `const_width` = diameter (width 0 draws a hollow ring). Dots in the user's files live in nested anonymous blocks (`*U..`): flatten with `virtual_entities()` recursively to read them.
 - Reading `dimtype`: 32 = block-exclusive flag; 33 aligned, 161 aligned with moved text, 0/32 linear. A dim's rendered text is in its geometry block (`virtual_entities()`).
 - Deleting a dimension: also delete its anonymous geometry block (`doc.blocks.delete_block(name, safe=False)`).
+
+- Linear dim text: `location=` is the exact text midpoint (measured); without it the text sits 18 from the line (dimtad=1), but 23 for items narrower than the text. To control overlaps always pass `location`. Rotated (angle 90) dims put the default on the LEFT (-18).

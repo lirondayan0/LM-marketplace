@@ -17,6 +17,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'scripts'))
 import plan_chains as pc
 import plan_elements as pe
+import plan_audit as pa
 import ezdxf
 from dxflib import backup
 
@@ -120,18 +121,182 @@ def clear_dims(doc, box):
     return n
 
 
+JOG = pa.JOG             # a wall face within JOG of a read face is a jog of the same opening
+TOL_BEAM = 1.5
+MIN_SKEW = pa.MIN_SKEW
+SRC_LAYERS = ('82_KIR_OLE', '93_KORA', '9_KONTUR')
+
+
+def universe(doc, box):
+    """straight segments of every structural element in the box: vertical (x = c, y lo..hi), horizontal (y = c, x lo..hi), skewed (a, b). Beam LINES and polygon edges alike."""
+    x0, x1, y0, y1 = box; V = []; H = []; S = []
+    for e in doc.modelspace().query('LWPOLYLINE LINE'):
+        if e.dxf.layer not in SRC_LAYERS: continue
+        if e.dxftype() == 'LINE': p = [tuple(e.dxf.start)[:2], tuple(e.dxf.end)[:2]]; closed = False
+        else: p = pe.pts(e); closed = e.closed
+        bx0, by0, bx1, by1 = pe.bb(p)
+        if not (x0 <= bx0 and bx1 <= x1 and y0 <= by0 and by1 <= y1): continue
+        if e.dxf.layer == '82_KIR_OLE' and (bx1 - bx0 >= pc.BIG or by1 - by0 >= pc.BIG): continue
+        n = len(p)
+        for i in range(n if closed else n - 1):
+            a, b = p[i], p[(i + 1) % n]; L = pe.dist(a, b)
+            if L < 1: continue
+            d = dict(h=e.dxf.handle, layer=e.dxf.layer, closed=closed)
+            if abs(a[0] - b[0]) < 1.5: V.append(dict(d, c=(a[0] + b[0]) / 2, lo=min(a[1], b[1]), hi=max(a[1], b[1])))
+            elif abs(a[1] - b[1]) < 1.5: H.append(dict(d, c=(a[1] + b[1]) / 2, lo=min(a[0], b[0]), hi=max(a[0], b[0])))
+            else: S.append(dict(d, a=a, b=b, L=L))
+    return V, H, S
+
+
+def read_vals(chains, axis):
+    return sorted(u for ch in chains if ch['axis'] == axis for a, b, e in ch['items'] for u in (a, b))
+
+
+def unread(uni, chains):
+    V, H, S = uni; out = {'x': {}, 'y': {}}
+    for segs, axis in ((V, 'x'), (H, 'y')):
+        vals = read_vals(chains, axis)
+        for sg in segs:
+            tol = TOL_BEAM if sg['layer'] == '93_KORA' else JOG
+            if pa.has_tol(vals, sg['c'], tol): continue
+            out[axis].setdefault(round(sg['c'], 1), []).append(sg)
+    return out
+
+
+EXT_MAX = 300.0          # an unread face may be spliced into an existing chain whose line is at most this far from the element (extension line)
+
+
+def insert_faces(chains, faces, axis):
+    """splice an unread face into an EXISTING chain of that axis: the line crosses the element or is <= EXT_MAX away (extension line to the nearest point of the face),
+    and runs through a clear span there (a continuous line is kept, no new line)"""
+    left = {}
+    for c, segs in sorted(faces.items()):
+        best = None
+        for ch in chains:
+            if ch['axis'] != axis: continue
+            rv = ch['v'] if axis == 'x' else -ch['v']        # real coordinate of the line (y for rows, x for columns)
+            for sg in segs:
+                d = max(0.0, sg['lo'] - rv, rv - sg['hi'])
+                if d > EXT_MAX: continue
+                for k, (a, b, e) in enumerate(ch['items']):
+                    if e is None and a + MIN_SPAN < c < b - MIN_SPAN and (best is None or d < best[0]):
+                        best = (d, ch, k, min(max(rv, sg['lo']), sg['hi']))
+        if best is None: left[c] = segs; continue
+        d, ch, k, ref = best; a, b, e = ch['items'][k]
+        ch['items'][k:k + 1] = [(a, c, None), (c, b, None)]
+        ch.setdefault('refs', {})[round(c, 1)] = ref if axis == 'x' else -ref      # ref in the chain's own v convention (uv)
+    return left
+
+
+def scan_faces(uni, axis, v):
+    """every face crossing the scan line (axis x: horizontal line y = v; axis y: vertical line x = v), clustered"""
+    V, H, S = uni; segs = V if axis == 'x' else H
+    fs = sorted(sg['c'] for sg in segs if sg['lo'] - 1 <= v <= sg['hi'] + 1)
+    out = []
+    for f in fs:
+        if out and f - out[-1] < MIN_SPAN: continue          # jog / duplicate face
+        out.append(f)
+    return out
+
+
+def new_chains(out, uni, chains, faces, axis, rep):
+    """remaining unread faces: greedy set cover by scan lines; each line carries EVERY face crossing it between its anchors (one continuous chain)"""
+    xy = (lambda u, v: (u, v)) if axis == 'x' else (lambda u, v: (v, u))     # REAL coordinates here (the chain is stored with v = -x for columns)
+    faces = dict(faces); guard = 0
+    while faces and guard < 60:
+        guard += 1
+        cand = {}
+        for c, segs in faces.items():
+            for sg in segs:
+                v = sg['lo'] + 10
+                while v <= sg['hi'] - 10 + 1e-6:
+                    cand.setdefault(round(v / 10) * 10, set()).add(c); v += 20
+                cand.setdefault(round((sg['lo'] + sg['hi']) / 20) * 10, set()).add(c)
+        if not cand: break
+        best = sorted(cand.items(), key=lambda t: -len(t[1]))[:80]
+        top = len(best[0][1]); scored = []
+        for v, cs in best:
+            if len(cs) < top * 0.7: continue
+            fs = scan_faces(uni, axis, v)
+            lo = min(cs); hi = max(cs)
+            le = [f for f in fs if f <= lo + 1.5]; ri = [f for f in fs if f >= hi - 1.5]
+            u0 = le[-2] if len(le) >= 2 and abs(le[-1] - lo) < 1.5 else (le[-1] if le else lo)
+            u1 = ri[1] if len(ri) >= 2 and abs(ri[0] - hi) < 1.5 else (ri[0] if ri else hi)
+            u0 = min(u0, lo); u1 = max(u1, hi)
+            sel = [f for f in fs if u0 - 1 <= f <= u1 + 1]
+            if len(sel) < 2: continue
+            scored.append((-len(cs), cost(out, xy(sel[0], v), xy(sel[-1], v)), v, sel, cs))
+        if not scored:
+            break
+        scored.sort(key=lambda t: (t[0], t[1]))
+        _, c_, v, sel, cs = scored[0]
+        cs = {c for c in cs if any(abs(c - f) < 1.5 for f in sel)}      # a face swallowed by the jog filter of scan_faces cannot be chained: dropped, never loops
+        if not cs:
+            for c in list(faces):
+                if not any(abs(c - f) < 1.5 for f in scan_faces(uni, axis, v)): faces.pop(c)
+            continue
+        items = [(a, b, None) for a, b in zip(sel, sel[1:]) if b - a >= MIN_SPAN]
+        chains.append(dict(axis=axis, v=v if axis == 'x' else -v, items=items, tag='cover', far={}, obst=c_))
+        out.stripes.add(xy(sel[0], v), xy(sel[-1], v))
+        rep.append((axis, 'cover chain', round(v), 'faces=%d' % len(cs), 'items=%d' % len(items), 'obstacles=%d' % c_))
+        faces = {c: s_ for c, s_ in faces.items() if not any(abs(c - f) < 1.5 for f in sel)}
+    return faces
+
+
+def dedupe(chains, rep):
+    """A feature is dimensioned ONCE: an interval (same two faces, same direction) that two chains both carry stays only on the chain with the most items; the other chain keeps the rest
+    (it may fall into runs). Faces stay readable because the keeper has the same coordinates."""
+    n = 0
+    for axis in ('x', 'y'):
+        cs = [c for c in chains if c['axis'] == axis]
+        owner = {}
+        for ch in sorted(cs, key=lambda c: (-len(c['items']), c['v'])):
+            for a, b, e in ch['items']:
+                owner.setdefault((round(a), round(b)), ch)
+        for ch in cs:
+            keep = [it for it in ch['items'] if owner[(round(it[0]), round(it[1]))] is ch]
+            n += len(ch['items']) - len(keep); ch['items'] = keep
+    rep.append(('duplicate items removed', n))
+    return n
+
+
+def skew_dims(out, uni, rep):
+    """aligned dim on every skewed edge >= MIN_SKEW: opposite equal parallel edges of one element once (the western / southern one), outside the element on a free side"""
+    V, H, S = uni; by = {}
+    for sg in S:
+        if sg['L'] >= MIN_SKEW: by.setdefault(sg['h'], []).append(sg)
+    n = 0
+    for h, segs in by.items():
+        taken = []
+        allp = [q for t in segs for q in (t['a'], t['b'])]
+        cx = sum(q[0] for q in allp) / len(allp); cy = sum(q[1] for q in allp) / len(allp)
+        for sg in sorted(segs, key=lambda t: (t['a'][0] + t['b'][0], t['a'][1] + t['b'][1])):
+            ang = math.atan2(sg['b'][1] - sg['a'][1], sg['b'][0] - sg['a'][0]) % math.pi
+            if any(abs(t['L'] - sg['L']) < 1 and abs(t['ang'] - ang) < .01 for t in taken): continue
+            sg['ang'] = ang; taken.append(sg)
+            a, b = sg['a'], sg['b']; L = sg['L']
+            left = (-(b[1] - a[1]) / L, (b[0] - a[0]) / L)
+            mid = ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)
+            side = -1 if (mid[0] - cx) * left[0] + (mid[1] - cy) * left[1] < 0 else 1      # +1 = left of a->b is outward
+            o = 80
+            for o in (80, 120, 170, 230, 300):
+                pa_ = (a[0] + left[0] * o * side, a[1] + left[1] * o * side); pb_ = (b[0] + left[0] * o * side, b[1] + left[1] * o * side)
+                if out.free(pa_, pb_): break
+            out.aligned(a, b, o * side, 'skew' + h); n += 1
+            rep.append(('skew edge', h, round(L, 1), o))
+    return n
+
+
 def run(doc, box, void=None, dry=False, verbose=False, replace=False):
     pc.load = box_load(box)
     if replace and not dry: print('removed old dims:', clear_dims(doc, box))
-    out = pe.Out(doc); rep = []
+    out = pe.Out(doc); rep = []; chains = []
+    # ---- phase 1: pier / wall chains (merged into continuous lines) with placement
     for axis in ('x', 'y'):
         P = pc.prep(pc.load(doc), axis)
         res, rot = pc.plan(doc, axis)
-        # void faces: split the chain closest to the void centre (row below the void / the middle column)
         vfaces = None
-        if void:
-            vx0, vx1, vy0, vy1 = void
-            vfaces = (vx0, vx1) if axis == 'x' else (vy0, vy1)
+        if void: vfaces = (void[0], void[1]) if axis == 'x' else (void[2], void[3])
         groups = merge_chains(res)
         best_for_void = None
         if void:
@@ -141,16 +306,16 @@ def run(doc, box, void=None, dry=False, verbose=False, replace=False):
                 return min(abs(-lv - cx) for lv in g['lvs'])
             cands = [g for g in groups if dist_void(g) < 1e9]
             if cands: best_for_void = min(cands, key=dist_void)
+        xy = (lambda u, v: (u, v)) if axis == 'x' else (lambda u, v: (-v, u))
         for g in groups:
             items = g['items']
             if not items: continue
             if void and g is best_for_void: items = split_items(items, vfaces)
-            far = {}                                      # far face of every pier item (other side of the line)
+            far = {}
             for a, b, e in items:
                 if e is None: continue
                 for q in P:
                     if q['pier'] and q['u0'] - 1 <= a and b <= q['u1'] + 1 and abs(q['v0'] - e) < 1: far[(a, b)] = q['v1']
-            xy = (lambda u, v: (u, v)) if axis == 'x' else (lambda u, v: (-v, u))
             u0, u1 = items[0][0], items[-1][1]
             cands = []
             for lv in g['lvs']:
@@ -158,36 +323,34 @@ def run(doc, box, void=None, dry=False, verbose=False, replace=False):
                 cands += [(lv, 'near'), (lv - 60, 'near+60'), (max(tops) + 101, 'far'), (max(tops) + 160, 'far+60')]
             scored = [(cost(out, xy(u0, v), xy(u1, v)) + (0 if tag == 'near' else 0.5), v, tag) for v, tag in cands]
             c, v, tag = min(scored, key=lambda t: (t[0], t[1] != g['lvs'][0]))
-            side_far = tag.startswith('far'); k = 0
-            for a, b, e in items:
-                ref = e
-                if e is not None and side_far: ref = far.get((a, b), e)
-                if ref is None: ref = v
-                nk = None
-                if b - a < NARROW: nk = k; k += 1
-                if axis == 'x': out.lin((a, ref), (b, ref), (a, v), 0, nk)
-                else: out.lin((-ref, a), (-ref, b), (-v, a), 90, nk)
+            chains.append(dict(axis=axis, v=v, items=items, tag=tag, far=far, obst=c, merged=len(g['lvs'])))
             out.stripes.add(xy(u0, v), xy(u1, v))
-            rep.append((axis, 'chain', round(v), tag, 'merged=%d' % len(g['lvs']), 'obstacles=%d' % c, len(items), [round(b - a) for a, b, e in items] if verbose else ''))
-    # skewed east piers: one aligned length on the west edge
+    # ---- phase 2: coverage - every face of every beam / wall / column / contour must be readable in X and Y
+    uni = universe(doc, box)
+    for it in range(3):
+        un = unread(uni, chains); n0 = sum(len(v) for v in un.values())
+        for axis in ('x', 'y'): un[axis] = insert_faces(chains, un[axis], axis)
+        for axis in ('x', 'y'): new_chains(out, uni, chains, un[axis], axis, rep)
+        n1 = sum(len(v) for v in unread(uni, chains).values())
+        rep.append(('coverage pass', it, 'unread faces %d -> %d' % (n0, n1)))
+        if n1 == 0 or n1 >= n0: break
+    dedupe(chains, rep)
+    # ---- phase 3: draw
+    for ch in chains:
+        axis, v, items = ch['axis'], ch['v'], ch['items']; side_far = ch['tag'].startswith('far'); k = 0
+        for a, b, e in items:
+            ref = e
+            if e is not None and side_far: ref = ch['far'].get((a, b), e)
+            if ref is None: ref = v
+            ra = ch.get('refs', {}).get(round(a, 1), ref); rb = ch.get('refs', {}).get(round(b, 1), ref)
+            nk = None
+            if b - a < NARROW: nk = k; k += 1
+            if axis == 'x': out.lin((a, ra), (b, rb), (a, v), 0, nk)
+            else: out.lin((-ra, a), (-rb, b), (-v, a), 90, nk)
+        rep.append((axis, 'chain', round(v), ch['tag'], 'merged=%d' % ch.get('merged', 1), 'obstacles=%d' % ch['obst'], len(items), [round(b - a) for a, b, e in items] if verbose else ''))
+    # ---- phase 4: skewed edges (piers, beams, contour, sloped walls)
+    skew_dims(out, uni, rep)
     x0, x1, y0, y1 = box
-    n_sk = 0
-    for e in doc.modelspace().query('LWPOLYLINE'):
-        if e.dxf.layer != pc.SRC or not e.closed: continue
-        p = pe.pts(e)
-        if len(p) != 4: continue
-        bx0, by0, bx1, by1 = pe.bb(p)
-        if not (x0 <= bx0 and bx1 <= x1 and y0 <= by0 and by1 <= y1) or pe.is_rect(p): continue
-        if max(bx1 - bx0, by1 - by0) > 260 or min(bx1 - bx0, by1 - by0) > 100: continue   # piers only, not skewed rooms
-        edges = sorted([(pe.dist(p[i], p[(i + 1) % 4]), p[i], p[(i + 1) % 4]) for i in range(4)], reverse=True)[:2]
-        L, a, b = min(edges, key=lambda t: (t[1][0] + t[2][0]))     # the longer pair, the western one
-        if L < MIN_SPAN: continue
-        nx, ny = (b[1] - a[1]) / L, -(b[0] - a[0]) / L            # a normal; make it point west
-        if nx > 0: nx, ny = -nx, -ny
-        left = (-(b[1] - a[1]) / L, (b[0] - a[0]) / L)
-        sgn = 1 if left[0] * nx + left[1] * ny > 0 else -1
-        out.aligned(a, b, 80 * sgn, 'skew' + e.dxf.handle); n_sk += 1
-        rep.append(('skewed pier length', e.dxf.handle, round(L, 1)))
     # overall of the slab contour
     cont = [e for e in doc.modelspace().query('LWPOLYLINE') if e.dxf.layer == pe.CONT and e.closed and len(e) > 8]
     cont = [e for e in cont if x0 <= pe.bb(pe.pts(e))[0] and pe.bb(pe.pts(e))[2] <= x1 and y0 <= pe.bb(pe.pts(e))[1] and pe.bb(pe.pts(e))[3] <= y1]

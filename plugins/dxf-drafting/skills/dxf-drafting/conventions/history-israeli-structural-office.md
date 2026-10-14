@@ -9,7 +9,7 @@ Source: user's own drawings in `Desktop\AI`. Confidence noted per rule. Add new 
 - Hebrew text is stored as English-keyboard characters in SHX fonts (`Sivan`, `HEBTXT`, `MIRYL`). Decode with the Hebrew keyboard layout (`dxflib.decode`); `&` = Ø in rebar notes; `%%U` = underline.
   Examples: `j,l` = חתך, `pbho` = פנים, `ju.` = חוץ.
 - Section titles on `54_HATAH_TEXT`, format `%%Uj,l 3-3` (+ a "1:25" text and a note line below). User's "67-67" means section `76-76` (digit swap, verified once).
-- Layer names are transliterated Hebrew: `HATAH`=חתך, `MIDA`=מידה, `ZIUN`=ציון, `ZET`=זט (rebar), `KIR`=קיר, `BARZEL`=ברזל. Full list of the office's 247 layers: skill `anthropic-skills:construction-layers`.
+- Layer names are transliterated Hebrew: `HATAH`=חתך, `MIDA`=מידה, `ZIUN`=ציון, `ZET`=leader line for a note/rebar detail (user 2026-10-13; earlier guess 'rebar' superseded), `KIR`=קיר, `BARZEL`=ברזל. Full list of the office's 247 layers: skill `anthropic-skills:construction-layers`.
 
 ## Layers (sections)
 | Element | Layer | Confidence |
