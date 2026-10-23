@@ -124,7 +124,7 @@ def kontur_analyze(ms, flatten=0.4, tol=3.0, bridge=0.3):
             repairs.append(dict(kind='gap', size=round(g))); loops.append(chain)
         else:
             on = lambda p: any(_seg_dist(p, l[i], l[(i + 1) % len(l)]) <= tol * 2 for l in loops for i in range(len(l)))
-            if not all(on(q) for q in chain): repairs.append(dict(kind='dropped', points=len(chain)))      # a duplicate / spur edge lying on a loop is ignored silently
+            if len(chain) >= 3 and not all(on(q) for q in chain): repairs.append(dict(kind='dropped', points=len(chain)))      # a lone 2-point line (a legend swatch) is not worth a warning      # a duplicate / spur edge lying on a loop is ignored silently
     out = []                                                   # duplicates (the same loop drawn twice / a loop and its copy)
     for l in sorted(loops, key=_area, reverse=True):
         bb = (min(q[0] for q in l), min(q[1] for q in l), max(q[0] for q in l), max(q[1] for q in l))
@@ -175,12 +175,14 @@ def dim_template(ms, pad=100.0):
     """the OUTPUT LAYER + DIM STYLE of the work (user 2026-10-14): a cloud OUTSIDE the plan (outside claude_Kontur) encloses a sample dimension drawn on the layer/style to use for every dimension I create.
     Cloud on layer `claude_DIM` (user's latest marking) is preferred, then red/orange clouds on layer `claude`; clouds inside the plan are missing-size / add-face marks and are skipped.
     Returns (layer, dimstyle, handle) of the first dimension found inside such a cloud, else None (callers keep the defaults 36_MIDA_CLALI / dim_100)."""
-    kon = kontur_outline(ms)
+    kons = kontur_loops(ms)
+    kon = bool(kons)
     def inside(x, y):
         c = False
-        for i in range(len(kon)):
-            (x1, y1), (x2, y2) = kon[i], kon[(i + 1) % len(kon)]
-            if (y1 > y) != (y2 > y) and x < x1 + (y - y1) * (x2 - x1) / (y2 - y1): c = not c
+        for loop in kons:                                     # any boundary region
+            for i in range(len(loop)):
+                (x1, y1), (x2, y2) = loop[i], loop[(i + 1) % len(loop)]
+                if (y1 > y) != (y2 > y) and x < x1 + (y - y1) * (x2 - x1) / (y2 - y1): c = not c
         return c
     clouds = [c for c in ms.query('LWPOLYLINE') if c.dxf.layer.lower() in ('claude_dim', 'claude')]
     clouds.sort(key=lambda c: c.dxf.layer.lower() != 'claude_dim')
@@ -190,5 +192,6 @@ def dim_template(ms, pad=100.0):
         for d in ms.query('DIMENSION'):
             if d.dxf.layer.lower() in ('claude', 'claude_dim'): continue
             pts = [d.dxf.defpoint, d.dxf.defpoint2, d.dxf.defpoint3]
-            if sum(x0 - pad <= p.x <= x1 + pad and y0 - pad <= p.y <= y1 + pad for p in pts) >= 2: return d.dxf.layer, d.dxf.dimstyle, d.dxf.handle   # 2 of 3 points: hand-drawn clouds are tight
+            t = d.dxf.text_midpoint      # the user's own legend example frames the dimension LINE + TEXT only (the measured points stay outside the frame): the text inside the frame is enough
+            if sum(x0 - pad <= p.x <= x1 + pad and y0 - pad <= p.y <= y1 + pad for p in pts) >= 2 or (x0 <= t.x <= x1 and y0 <= t.y <= y1): return d.dxf.layer, d.dxf.dimstyle, d.dxf.handle   # 2 of 3 points: hand-drawn clouds are tight
     return None

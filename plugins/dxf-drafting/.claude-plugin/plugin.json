@@ -1,6 +1,6 @@
 {
   "name": "dxf-drafting",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Profile-driven DXF skill for structural/engineering drawings (AutoCAD export): inspect, learn office conventions, dimension, annotate, draw sections, audit.",
   "author": {
     "name": "Liron Dayan",

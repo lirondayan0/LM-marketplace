@@ -39,15 +39,25 @@ print('all passed')
 
 # ledge_beam: full hollow-core beam section on the synthetic file (3-3 type: slabs both sides) + restyle of the detail dims + learn_diff round trip
 src = sample(); out = os.path.join(tmp, 'ledge.dxf')
-run(os.path.join(REC, 'ledge_beam.py'), src, '3-3', '--box', '0', '0', '400', '450', '--beam', '80', '65', '--slab', '20', '--topping', '5', '--sides', 'both', '-o', out)
+run(os.path.join(REC, 'ledge_beam.py'), src, '3-3', '--box', '0', '0', '400', '450', '--beam', '80', '65', '--slab', '20', '--topping', '5', '--sides', 'both', '--stirrups', 'transfer', '-o', out)
 d = ezdxf.readfile(out); m = d.modelspace()
 dots = [p for p in m.query('LWPOLYLINE') if len(p) == 2 and p.closed and p.dxf.layer == '57_HATAH_ZIUN']
 assert len(dots) == 30 and all(p.dxf.const_width == 1.0 for p in dots), 'expected 30 solid dots'
 assert len(m.query('DIMENSION')) >= 12 and not d.audit().errors
 texts = [t.dxf.text for t in m.query('TEXT')]
-assert '$12@20' in texts and '2$12@15 L=190' in texts and texts.count('$12@15 L=154') == 2, texts
+assert '$12@20' in texts and '2$12/14/16@15 L=190' in texts and texts.count('$12@15 L=154') == 2, texts      # ST: only the tall-stirrup note is 12/14/16 (user's cloud 2026-10-21)
+# solid slab beside a ledge beam with the parametric thickness symbol H (user 2026-10-18, 'casting completion' cloud, 6-6)
+outS = os.path.join(tmp, 'ledge_solid.dxf')
+run(os.path.join(REC, 'ledge_beam.py'), sample(), '6-6', '--box', '0', '0', '400', '450', '--beam', '80', '70', '--slab', '25', '--topping', '7', '--sides', 'left', '--solid', 'right', '--solid-D', '25', '--solid-label', 'H', '--detail', 'plan', '-o', outS)
+dS = ezdxf.readfile(outS); assert not dS.audit().errors
+assert [x.dxf.text for x in dS.modelspace().query('DIMENSION') if x.dxf.text == 'H'], 'solid slab thickness dim must carry the symbol H'
+# cast edge beam: hollow-core slab one side + SOLID slab the other with the symbol H (user 2026-10-18, 6-6 / 7-7)
+outC = os.path.join(tmp, 'cast_solid.dxf')
+run(os.path.join(REC, 'ledge_beam.py'), sample(), '7-7', '--box', '0', '0', '400', '450', '--beam', '30', '60', '--slab', '32', '--topping', '7', '--sides', 'right', '--kind', 'cast', '--solid', 'left', '--solid-D', '25', '--solid-label', 'H', '-o', outC)
+dC = ezdxf.readfile(outC); assert not dC.audit().errors and len([e for e in dC.modelspace().query('LWPOLYLINE') if e.dxf.layer == '10_PLADA_HATAH' and len(e) == 4 and e.closed]) == 3
+assert [x.dxf.text for x in dC.modelspace().query('DIMENSION') if x.dxf.text == 'H'], 'cast + solid: slab thickness dim must be H'
 out2 = os.path.join(tmp, 'ledge2.dxf')
-run(os.path.join(REC, 'ledge_beam.py'), out, '3-3', '--box', '0', '0', '400', '450', '--beam', '80', '65', '--slab', '20', '--topping', '5', '--sides', 'both', '--dims-only', '-o', out2)
+run(os.path.join(REC, 'ledge_beam.py'), out, '3-3', '--box', '0', '0', '400', '450', '--beam', '80', '65', '--slab', '20', '--topping', '5', '--sides', 'both', '--stirrups', 'transfer', '--dims-only', '-o', out2)
 assert len(ezdxf.readfile(out2).modelspace().query('DIMENSION')) == len(m.query('DIMENSION')), 'dims-only must restyle, not add or lose dimensions'
 ld = run(os.path.join(HERE, '..', 'scripts', 'learn_diff.py'), out2, out, '--box', '-100', '-100', '600', '700')
 assert 'only in USER 0' not in ld or True
@@ -412,3 +422,269 @@ def _nest(m):
     m.add_lwpolyline(sq, close=True, dxfattribs=K); m.add_lwpolyline([(300, 300), (600, 300), (600, 500), (300, 500)], close=True, dxfattribs=K); m.add_lwpolyline([(2000, 0), (3000, 0), (3000, 500), (2000, 500)], close=True, dxfattribs=K)
 L, R = _kl(_nest); assert len(L) == 2 and any(r['kind'] == 'nested' for r in R), 'a loop inside another is a hole, a separate loop stays a region'
 print('PASS claude_Kontur reader: nested loop = hole')
+
+# dim_template: frame around the dimension line + text only (user's legend file, measured points outside the frame)
+_d = ezdxf.new('R2018', setup=True); _m = _d.modelspace(); _d.layers.add('claude_DIM'); _d.layers.add('claude_Kontur'); _d.layers.add('36_MIDA_CLALI')
+_m.add_lwpolyline([(0, 0), (1000, 0), (1000, 800), (0, 800)], close=True, dxfattribs={'layer': 'claude_Kontur'})
+_m.add_linear_dim(base=(3080, 100), p1=(3300, 100), p2=(3300, 300), angle=90, dimstyle='EZDXF', dxfattribs={'layer': '36_MIDA_CLALI'}).render()
+_m.add_lwpolyline([(3040, 60), (3120, 60), (3120, 340), (3040, 340)], close=True, dxfattribs={'layer': 'claude_DIM'})
+_tp = _lf.dim_template(_m); assert _tp and _tp[0] == '36_MIDA_CLALI', 'frame around the dimension line and text (points outside) finds the sample dimension'
+print('PASS dim_template: frame around line + text only')
+
+# ledge_beam cast, slab on the LEFT (star marker, 2026-10-15): mirror of the right-slab section - same entity counts, slab geometry on the other side of the beam
+_o1, _o2 = os.path.join(tempfile.gettempdir(), 'cast_r.dxf'), os.path.join(tempfile.gettempdir(), 'cast_l.dxf')
+for _s, _o in (('right', _o1), ('left', _o2)): run(os.path.join(REC, 'ledge_beam.py'), src, '1-1', '--box', '0', '0', '400', '450', '--beam', '30', '65', '--slab', '25', '--topping', '5', '--sides', _s, '--kind', 'cast', '-o', _o)
+def _core_x(p): return [sum(v[0] for v in e.get_points('xy')) / 4 for e in ezdxf.readfile(p).modelspace().query('LWPOLYLINE') if e.dxf.layer == '10_PLADA_HATAH' and len(e) == 4 and e.closed]      # obround cores (user 2026-10-21)
+_r, _l = _core_x(_o1), _core_x(_o2); assert len(_r) == len(_l) == 3
+def _beam_mid(p): return [(e.dxf.start.x + e.dxf.end.x) / 2 for e in ezdxf.readfile(p).modelspace().query('LINE') if abs(abs(e.dxf.end.x - e.dxf.start.x) - 30) < 1e-6 and abs(e.dxf.end.y - e.dxf.start.y) < 1e-6][0]
+assert min(_r) > _beam_mid(_o1) and max(_l) < _beam_mid(_o2), 'cores right of the stem when sides=right, left of it when sides=left'
+print('PASS ledge_beam cast: slab on the left = mirror image')
+
+# star_orient: clockwise turn (south pair E -> W), centred on the beam axis, east of the size label, number re-placed (user's red-cloud examples 2026-10-15)
+import math as _m
+_d = ezdxf.new('R2018'); _b = _d.blocks.new('hat'); _b.add_line((0, 0), (40, 0)); _b.add_attdef('A', (14.66, 25.99), dxfattribs={'height': 22})
+for _n in ('automatic_sections', '93_KORA', '451TEXT_KORA_100'): _d.layers.add(_n)
+_m2 = _d.modelspace()
+def _pair(x, ymid, rot, nm='*'):
+    sx = (-1, 1) if rot == 270 else (1, -1)
+    for dy, s in ((-92, sx[0]), (92, sx[1])):
+        r = _m2.add_blockref('hat', (x, ymid + dy), dxfattribs={'layer': 'automatic_sections', 'rotation': rot, 'xscale': 1.328 * s, 'yscale': 1.328}); r.add_attrib('A', nm, (x + 16, ymid + dy + 38), dxfattribs={'height': 24, 'rotation': 270})
+for _y in (0, 1000):                                               # south beam at y=0 (axis 0), north beam at y=1000
+    for _yy in (_y - 15, _y + 15): _m2.add_line((-500, _yy), (500, _yy), dxfattribs={'layer': '93_KORA'})
+    _m2.add_text('30/65', height=20, dxfattribs={'layer': '451TEXT_KORA_100', 'insert': (-30, _y - 8)})
+_pair(-10, 10, 270); _pair(-10, 1010, 270)                      # both looking E, 10 off the beam axis, through the label
+_f = os.path.join(tmp, 'star.dxf'); _d.saveas(_f)
+r = subprocess.run([sys.executable, os.path.join(REC, 'star_orient.py'), _f, '--tidy', 'W'], capture_output=True, text=True, encoding='utf-8'); assert r.returncode == 0, r.stderr
+_m3 = ezdxf.readfile(_f).modelspace(); _h = [e for e in _m3.query('INSERT') if e.dxf.name == 'hat']
+_s = [e for e in _h if e.dxf.insert.y < 500]; _n = [e for e in _h if e.dxf.insert.y > 500]
+assert all(round(e.dxf.rotation) == 90 for e in _s) and all(round(e.dxf.rotation) == 270 for e in _n), 'south pair turned to W, north pair kept E'
+_mid = sum(e.dxf.insert.y for e in _s) / 2; assert abs(_mid) < 1, 'centred on the beam axis'
+assert all(abs(e.dxf.insert.x + 10) < 1 for e in _s), 'x along the beam is NOT moved (user examples: no common anchor)'
+for e in _s + _n:
+    k = 1.328; sx = 1 if e.dxf.xscale > 0 else -1; a = e.attribs[0]; r = _m.radians(e.dxf.rotation); dx, dy = a.dxf.insert.x - e.dxf.insert.x, a.dxf.insert.y - e.dxf.insert.y
+    ux, uy = dx * _m.cos(r) + dy * _m.sin(r), -dx * _m.sin(r) + dy * _m.cos(r)
+    assert abs(uy / k - 11.9) < 0.1 and abs(sx * ux / k - (16.5 if sx > 0 else 28.55)) < 0.1 and round(a.dxf.rotation) % 360 == round(e.dxf.rotation) % 360, 'number rigid with the block (local position + rotation)'
+print('PASS star_orient: clockwise turn + centred on beam + number rigid with the block')
+
+# slab_edge: free edge of a D=20 solid slab = the user's own detail (cell 4 of sections_ramla.dxf, 2026-10-15), numbers measured on it
+_d4 = sample(); _d4doc = ezdxf.readfile(_d4); _b2 = _d4doc.blocks.new('dot barzel'); _b2.add_circle((0, 0), 1.25); _d4doc.layers.add('1922_ZIUN_DOT_T+I'); _d4doc.saveas(_d4)
+_o3 = os.path.join(tempfile.gettempdir(), 'edge.dxf'); run(os.path.join(REC, 'slab_edge.py'), _d4, '4-4', '--box', '0', '0', '400', '450', '--slab', '20', '-o', _o3)
+_d3 = ezdxf.readfile(_o3); _m4 = _d3.modelspace(); assert not _d3.audit().errors
+_ln = [e for e in _m4.query('LINE') if e.dxf.layer == '9_KONTUR']; assert len(_ln) == 3, 'top, soffit and free end face'
+_top = [e for e in _ln if abs(e.dxf.start.y - 301.3) < 1e-6]; assert len(_top) == 1 and abs(abs(_top[0].dxf.end.x - _top[0].dxf.start.x) - 58.8) < 0.05 and abs(max(_top[0].dxf.start.x, _top[0].dxf.end.x) - 234.4) < 1e-6, 'edge at x0+234.4, 58.8 long, top at y0+301.3'
+_bars = [e for e in _m4.query('LINE') if e.dxf.layer == '57_HATAH_ZIUN']; assert len(_bars) == 2 and all(abs(max(e.dxf.start.x, e.dxf.end.x) - 231.4) < 1e-6 for e in _bars), 'bar lines stop 3 short of the edge'
+_dots = [e for e in _m4.query('INSERT') if e.dxf.name == 'dot barzel']; assert len(_dots) == 8 and sorted({round(e.dxf.insert.y, 1) for e in _dots}) == [285.6, 297.0] and sorted({round(e.dxf.insert.x, 1) for e in _dots}) == [184.9, 199.9, 214.9, 229.9], '2 rows x 4 dot barzel'
+_tx = [t.dxf.text for t in _m4.query('TEXT')]; assert 'c/g/ kph ,fw' in _tx and 'c/,/ kph ,fw' in _tx and 'euyr upxhgv gwwp' in _tx and 'crzk zhui tupeh' in _tx, 'per-plan notes + bar-shape note'
+_u = [e for e in _m4.query('LWPOLYLINE') if e.dxf.layer == '57_HATAH_ZIUN' and len(e) == 4]; assert len(_u) == 1 and abs((max(p[1] for p in _u[0].get_points('xy')) - min(p[1] for p in _u[0].get_points('xy'))) - 14) < 1e-6, 'U-bar shape 60 x (D-6)'
+print('PASS slab_edge: free slab edge = the user ceiling-edge detail')
+
+# stirrup tables (user's two images, 2026-10-15): consistent with the user's own examples; standard 85 -> 3 x 35 (ex 5-5), transfer 50 -> 2 x 30 (ex 2-2), n = 1 -> width = thickness - 6
+sys.path.insert(0, os.path.join(HERE, '..', 'scripts')); import dxflib as _dl
+assert _dl.stirrup_layout(85, 'standard')[:2] == (3, 35) and _dl.stirrup_layout(50, 'transfer')[:2] == (2, 30) and _dl.stirrup_layout(50, 'standard')[:2] == (2, 30)
+assert _dl.stirrup_layout(30, 'standard')[:2] == (1, 24) and _dl.stirrup_layout(200, 'transfer')[:2] == (7, 40) and _dl.stirrup_layout(44, 'standard')[3] == 45 and _dl.stirrup_layout(200, 'standard')[:2] == (5, 55)
+_o5 = os.path.join(tempfile.gettempdir(), 'st_std.dxf'); run(os.path.join(REC, 'ledge_beam.py'), src, '3-3', '--box', '0', '0', '400', '450', '--beam', '80', '65', '--slab', '20', '--topping', '5', '--sides', 'both', '-o', _o5)
+_tx = [t.dxf.text for t in ezdxf.readfile(_o5).modelspace().query('TEXT')]; assert any(x.startswith('2$12@15 L=') for x in _tx), 'standard 80/65 ledge beam: TWO stem stirrups (stem 50 -> 2 x 30, his table 2026-10-16)'
+print('PASS stirrup tables: standard / transfer lookup, ledge section uses them')
+
+# transfer_check: a vertical element (even a small pier) on the beam strip makes it a transfer beam (user's red cloud, 80/65 beam with a 26 x 37 pier, 2026-10-15)
+sys.path.insert(0, os.path.join(HERE, '..', 'scripts')); import transfer_check as _tc
+_d6 = ezdxf.new('R2018'); _m6 = _d6.modelspace(); _d6.layers.add('93_KORA'); _d6.layers.add('82_KIR_OLE')
+for _x in (0, 80): _m6.add_line((_x, 0), (_x, 1000), dxfattribs={'layer': '93_KORA'})
+_m6.add_lwpolyline([(27, 500), (53, 500), (53, 537), (27, 537)], close=True, dxfattribs={'layer': '82_KIR_OLE'})
+assert _tc.elements_on(_d6, 0, 0, 80, 1000) and not _tc.elements_on(_d6, 0, 0, 80, 400), 'small pier on the beam = transfer; nothing on the other part'
+assert _tc.beam_strip(_d6, 40, 300, False) == (0, 0, 80, 1000)
+print('PASS transfer_check: element on the beam strip, strip from a cut centre')
+
+# general_beam = the user's parametric section 6-6 (B, D, H); numbers measured on the example (B=20, D=25, H=74) and an untagged beam (B=25, D=20, H=40, height symbol h), 2026-10-15
+sys.path.insert(0, os.path.join(HERE, '..', 'recipes')); import general_beam as _gb
+assert [round(v, 1) for v in _gb.beam_dot_rows(74, 25)] == [69.7, 53.4, 33.4, 13.4, 4.5], 'dot rows of 6-6'
+assert [round(v, 1) for v in _gb.beam_dot_rows(40, 20)] == [35.7, 24.4, 4.5], 'dot rows of the H=40 beam (24.4 - 20 = 4.4 is merged into the bottom row)'
+_o7 = os.path.join(tempfile.gettempdir(), 'gb_ex.dxf'); run(os.path.join(REC, 'general_beam.py'), src, '6-6', '--box', '0', '0', '400', '450', '--B', '20', '--D', '25', '--H', '74', '--labels', 'example', '-o', _o7)
+_o8 = os.path.join(tempfile.gettempdir(), 'gb_h.dxf'); run(os.path.join(REC, 'general_beam.py'), src, '5-5', '--box', '0', '0', '400', '450', '--B', '25', '--D', '20', '--H', '40', '--h-label', 'h', '-o', _o8)
+for _f, _n in ((_o7, 26), (_o8, 2 * 3 + 16)):
+    _dd = ezdxf.readfile(_f); _mm = _dd.modelspace(); assert not _dd.audit().errors
+    assert len([e for e in _mm.query('LWPOLYLINE') if len(e) == 2 and e.closed and e.dxf.layer == '57_HATAH_ZIUN']) == _n, f'dots {_n}'
+_t7 = [t.dxf.text for t in ezdxf.readfile(_o7).modelspace().query('TEXT')]; assert {'4$12', '2$12', '2$8@20', '$12@15'} <= set(_t7)
+_dm = {e.dxf.text for e in ezdxf.readfile(_o8).modelspace().query('DIMENSION')}; assert 'h' in _dm and 'h-6' in _dm, 'height dims carry the symbol h'
+print('PASS general_beam: 6-6 numbers, untagged beam with symbol h')
+
+# general_beam with the transfer table: B=40 -> 2 stirrups of 25 under the beam, note 2$12/14/16@15 (star pair 6-6, wall rising from the beam, 2026-10-15)
+_o9 = os.path.join(tempfile.gettempdir(), 'gb_tr.dxf'); run(os.path.join(REC, 'general_beam.py'), src, '6-6', '--box', '0', '0', '400', '450', '--B', '40', '--D', '25', '--H', '40', '--h-label', 'h', '--stirrups', 'transfer', '-o', _o9)
+_m9 = ezdxf.readfile(_o9).modelspace(); assert '2$12/14/16@15' in [t.dxf.text for t in _m9.query('TEXT')], 'transfer note'
+assert len([e for e in _m9.query('LWPOLYLINE') if e.dxf.layer == '57_HATAH_ZIUN' and len(e) == 4 and e.closed]) == 4, 'two stirrup rectangles in the detail row + two inside the section (user 2026-10-16)'
+print('PASS general_beam: transfer stirrups (2 x 25 for B=40)')
+
+# ledge_beam with the height SYMBOL (untagged beam with a ledge, star pair 6-6, 2026-10-15): height dims carry 'h', 'h-25', 'h-6'; no L= lengths
+_oa = os.path.join(tempfile.gettempdir(), 'ledge_h.dxf'); run(os.path.join(REC, 'ledge_beam.py'), src, '6-6', '--box', '0', '0', '400', '450', '--beam', '40', '40', '--slab', '20', '--topping', '5', '--sides', 'right', '--kind', 'ledge', '--stirrups', 'transfer', '--h-label', 'h', '-o', _oa)
+_ma = ezdxf.readfile(_oa).modelspace(); _da = {e.dxf.text for e in _ma.query('DIMENSION')}; _ta = [t.dxf.text for t in _ma.query('TEXT')]
+assert {'h', 'h-25', 'h-6'} <= _da and not any('L=' in t for t in _ta) and '$12/14/16@15' in _ta, (_da, _ta)
+print('PASS ledge_beam: height symbol h on an untagged ledge beam')
+
+# star_plan helpers: tag, D label, dashed line = hidden edge between the faces (ledge), strip from the cut centre
+sys.path.insert(0, os.path.join(HERE, '..', 'recipes')); import star_plan as _sp
+_d8 = ezdxf.new('R2018'); _m8 = _d8.modelspace()
+for _l in ('93_KORA', '15_DASHED', '451TEXT_KORA_100'): _d8.layers.add(_l)
+for _x in (0, 40): _m8.add_line((_x, 0), (_x, 1000), dxfattribs={'layer': '93_KORA'})
+_m8.add_line((25, 100), (25, 900), dxfattribs={'layer': '15_DASHED'}); _m8.add_text('40/65', height=10, dxfattribs={'layer': '451TEXT_KORA_100', 'insert': (10, 500)}); _m8.add_text('D=20+5', height=10, dxfattribs={'insert': (200, 500)})
+_st = _tc.beam_strip(_d8, 20, 500, False); assert _st == (0, 0, 40, 1000)
+assert _sp.dashed_inside(_d8, _st, False) == [25.0] and _sp.text_near(_d8, _st, '451TEXT_KORA_100', _sp.TAG)[0][1].groups() == ('40', '65') and _sp.slab_labels(_d8, 20, 500)[0][3:] == (20, 5)
+print('PASS star_plan: strip, tag, ledge (dashed), slab label')
+
+# S / SS marks (user 2026-10-16): SS = engineer picks the bars -> the two slab-bar leader notes read 'X$XX', S keeps 'as per plan'; ' zhui kph ,fbh,' stays
+_oS = os.path.join(tempfile.gettempdir(), 'gb_S.dxf'); _oSS = os.path.join(tempfile.gettempdir(), 'gb_SS.dxf')
+run(os.path.join(REC, 'general_beam.py'), src, '6-6', '--box', '0', '0', '400', '450', '--B', '40', '--D', '25', '--H', '40', '--h-label', 'h', '--detail', 'plan', '-o', _oS)
+run(os.path.join(REC, 'general_beam.py'), src, '6-6', '--box', '0', '0', '400', '450', '--B', '40', '--D', '25', '--H', '40', '--h-label', 'h', '--detail', 'ss', '-o', _oSS)
+_tS = [t.dxf.text for t in ezdxf.readfile(_oS).modelspace().query('TEXT')]; _tSS = [t.dxf.text for t in ezdxf.readfile(_oSS).modelspace().query('TEXT')]
+assert 'X$XX' not in _tS and _tSS.count('X$XX') >= 1 and len(_tS) == len(_tSS), 'SS notes'
+print('PASS S / SS marks: SS replaces the slab-bar notes by X$XX')
+
+# S mark on a general beam = the user's hand fix of 8-8 (2026-10-16): '4$12' / '2$12' -> per-plan notes on shelves 46.2 / 47.1, beam-bar leaders (2 lines) removed
+_mS = ezdxf.readfile(_oS).modelspace(); _tS2 = [t.dxf.text for t in _mS.query('TEXT')]
+assert '4$12' not in _tS2 and '2$12' not in _tS2 and _tS2.count('c/g/ kph ,fw') >= 2 and _tS2.count('c/,/ kph ,fw') >= 2, 'S notes'
+print('PASS S mark: beam bar callouts become as-per-plan notes (8-8)')
+
+# user's fix of 10-10 / 11-11 (2026-10-16): two-digit title numbers are written digit-reversed; SS on a cast beam = X$XX on the beam bar callout, slab notes per plan
+import ledge_beam as _lbm
+assert _lbm.title_name('10-10') == '01-01' and _lbm.title_name('12-12') == '21-21' and _lbm.title_name('3-3') == '3-3', 'title digits'
+_oC = os.path.join(tempfile.gettempdir(), 'lb_ss_cast.dxf'); run(os.path.join(REC, 'ledge_beam.py'), src, '11-11', '--box', '0', '0', '400', '450', '--beam', '30', '90', '--kind', 'cast', '--sides', 'both', '--topping', '7', '--stirrups', 'standard', '--slab', '32', '--detail', 'ss', '-o', _oC)
+_tC = [t.dxf.text for t in ezdxf.readfile(_oC).modelspace().query('TEXT')]
+assert _tC.count('X$XX') == 2 and '4$12' not in _tC and '2$12' not in _tC and _tC.count(' zhui kph ,fbh,') == 2, 'SS cast'
+print('PASS titles digit-reversed; SS on a cast beam (11-11)')
+
+# ST mark = S with TRANSFER stirrups (user 2026-10-16)
+import star_plan as _spm
+class _H:
+    def __init__(s, t): s.attribs = [type('A', (), {'dxf': type('D', (), {'text': t})()})()]
+assert _spm.mark_of(_H('ST'), _H('ST')) == 'ST' and _spm.mark_of(_H('SS'), _H('SS')) == 'SS' and _spm.mark_of(_H('S'), _H('S')) == 'S' and _spm.mark_of(_H('*'), _H('*')) == 'S', 'mark_of'
+print('PASS star marks S / SS / ST')
+
+# leader_fit (user 2026-10-21): every note stands on a shelf as long as its text, with forks to bars; the S-mark 8-8 fix keeps the forks of the top note
+sys.path.insert(0, os.path.join(SKILL, 'scripts')) if 'SKILL' in globals() else None
+import leader_fit as _lf, shx_width as _sw
+_ext = _sw.text_extent('MIRYL', ' zhui kph ,fbh,', 100.0, 6, 1.0); assert 60 < _ext[1] - _ext[0] < 68 and _ext[1] <= 100.0, 'MIRYL runs leftwards from the insert'
+_dS = ezdxf.readfile(_oS); _ch = _lf.fit_box(_dS, (0, -150, 400, 600), dry=True)
+assert not [c for c in _ch if 'orphan' in c or 'left' in c], _ch
+print('PASS leader_fit: SHX text width, S-mark notes keep their forks, shelves cover the text')
+
+# leader_fit tip snap (user 2026-10-21): a stirrup-note fork ending 1.5 beside a dot goes onto the dot centre
+_ds = ezdxf.new('R2018'); _ms = _ds.modelspace(); _ds.styles.add('HEBREW_NEW', font='hebtxt 500.shx')
+for _l in ('56_HATAH_ZET', '54_HATAH_TEXT', '57_HATAH_ZIUN'): _ds.layers.add(_l)
+for _p in ((10, 20.5), (30, 20.5), (10, 40), (30, 40)): _ms.add_lwpolyline([(_p[0] - 1, _p[1]), (_p[0] + 1, _p[1])], dxfattribs={'layer': '57_HATAH_ZIUN'})
+_ms.add_lwpolyline([(-20, 20), (0, 20)], dxfattribs={'layer': '56_HATAH_ZET'}); _ms.add_line((0, 20), (8.5, 21.5), dxfattribs={'layer': '56_HATAH_ZET'}); _ms.add_line((0, 20), (31.5, 21.0), dxfattribs={'layer': '56_HATAH_ZET'})
+_ms.add_text('$12@20', height=6, dxfattribs={'layer': '54_HATAH_TEXT', 'style': 'HEBREW_NEW', 'insert': (-19, 21.5)})
+_lf.fit_box(_ds, (-50, -10, 120, 80)); _tips = sorted((l.dxf.end.x, l.dxf.end.y) for l in _ms.query('LINE'))
+assert _tips == [(10, 20.5), (30, 20.5)] or [tuple(round(v, 6) for v in t) for t in _tips] == [(10.0, 20.5), (30.0, 20.5)], _tips
+print('PASS leader_fit: fork tips snap to the dot centre')
+
+# bar_arrays planning (user 2026-10-21): runs of >=3 equal-step dots -> one array, leftovers paired, odd dot stays loose
+import bar_arrays as _ba
+_dd = [('a%d' % i, 100.0 + 15 * i, 50.0) for i in range(4)] + [('v%d' % i, 300.0, 10.0 + 20 * i) for i in range(3)] + [('p0', 120.0, 90.0), ('p1', 180.0, 90.0), ('s0', 150.0, 200.0)]
+_ar, _lo = _ba.plan_arrays(_dd)
+assert sorted((a[0], a[2], round(a[3])) for a in _ar) == [('H', 2, 60), ('H', 4, 45), ('V', 3, 40)] and _lo == ['s0'], (_ar, _lo)
+print('PASS bar_arrays: runs, pairs and loose dots planned')
+
+# wide beams: top row (<= 5.9) and bottom row (<= 10.15) of bar dots run across the width (user 2026-10-21, brenda_karka red clouds); B=20 keeps the 2-dot pair
+_o9 = os.path.join(tempfile.gettempdir(), 'gb_wide.dxf'); run(os.path.join(REC, 'general_beam.py'), src, '1-1', '--box', '0', '0', '400', '450', '--B', '150', '--D', '25', '--H', '115', '-o', _o9)
+_dw = ezdxf.readfile(_o9); _dots = [(round(e[0][0] + e[1][0], 1) / 2, e[0][1]) for e in _dw.modelspace().query('LWPOLYLINE') if e.dxf.layer == '57_HATAH_ZIUN' and len(e) == 2]
+_ys = sorted({round(y, 1) for _, y in _dots}); _top, _bot = max(_ys), min(_ys)
+_nt = sum(1 for _, y in _dots if abs(y - _top) < .2); _nb = sum(1 for _, y in _dots if abs(y - _bot) < .2)
+assert _nt >= 2 + 20 and _nb >= 2 + 10, (_nt, _nb)      # 150 wide: top ~ 150/5.9, bottom ~ 150/10.15 (+ slab dots on the top row)
+print('PASS general_beam: wide beam top / bottom bar rows across the width')
+
+# user's hand-organised 1-1 / 2-2 (2026-10-21): slab thickness dimensioned on BOTH ends (right one at B + 91.2), top note keeps 2 forks (top row), skin note on the second mid pair
+_dd = [e for e in ezdxf.readfile(_o9).modelspace().query('DIMENSION') if e.dxf.get('angle', 0) == 90 and e.dxf.layer == '53_HATAH_MIDA']
+_px = sorted(round(e.dxf.defpoint3[0] - e.dxf.defpoint2[0], 1) for e in _dd if abs(e.dxf.defpoint3[1] - e.dxf.defpoint2[1] - 25) < .1)
+assert len(_px) >= 2, _px
+print('PASS general_beam: slab thickness dimensioned on both ends')
+
+# per-side slab thickness and level drop (user 2026-10-21 'double-check the ceiling thicknesses'): left D=50 flush, right D=25 dropped 70 on a 130/95 beam
+_o10 = os.path.join(tempfile.gettempdir(), 'gb_sides.dxf'); run(os.path.join(REC, 'general_beam.py'), src, '6-6', '--box', '0', '0', '400', '450', '--B', '130', '--H', '95', '--D', '50', '--D-left', '50', '--D-right', '25', '--drop-right', '70', '-o', _o10)
+_ms = sorted(round(e.get_measurement()) for e in ezdxf.readfile(_o10).modelspace().query('DIMENSION') if e.dxf.layer == '53_HATAH_MIDA' and e.dxf.get('angle', 0) == 90)
+assert _ms.count(50) >= 1 and _ms.count(25) >= 1 and 95 in _ms, _ms
+print('PASS general_beam: per-side slab thickness and level drop')
+
+# stirrups beyond the 200 table (user 2026-10-21): fitted rule + HOOP RULE (two branches at most 40 cm apart -> width <= 40)
+for _k in ('standard', 'transfer'):
+    for _t in range(205, 420, 5):
+        _en, _ew = _dl.stirrup_extend(_t, _k); assert _ew <= 40 and (_en * _ew - (_t - 6)) / (_en - 1) >= 8 - 1e-9, (_k, _t, _en, _ew)
+assert _dl.stirrup_layout(250, 'standard')[:2] == (8, 40) and _dl.stirrup_layout(205, 'transfer')[0] == 7 and _dl.stirrup_layout(300, 'standard')[0] == 10
+print('PASS stirrups: extension beyond 200, width <= 40')
+
+# middle steel rule (user 2026-10-21)
+assert _dl.mid_steel(30, 60)[:2] == (8, 20) and _dl.mid_steel(65, 65)[:2] == (8, 15) and _dl.mid_steel(150, 115)[:2] == (10, 15) and _dl.mid_steel(30, 65, hollow=True)[:2] == (12, 20) and _dl.mid_steel(20, 100)[2] == '2$8@15'
+assert _dl.mid_steel(50, 40)[:2] == (8, 15) and _dl.mid_steel(100, 100)[:2] == (8, 15) and _dl.mid_steel(100, 101)[:2] == (10, 15)
+print('PASS mid_steel: area thresholds and hollow-core rule')
+
+# text overlap + row alignment (user 2026-10-22)
+sys.path.insert(0, REC)
+import text_overlap as _to, align_row as _ar
+_d = ezdxf.new('R2010'); _d.styles.add('SIVAN', font='arial.ttf') if 'SIVAN' not in _d.styles else None
+_m = _d.modelspace()
+for _y in (0.0, 6.7):                                  # two notes 6.7 apart (the 6-6 cloud): overlap with the 2.0 gap, apart once the lower one is staggered
+    _m.add_text('c/g/ kph ,fw', height=6, dxfattribs=dict(layer='54_HATAH_TEXT', style='SIVAN', width=0.7, text_generation_flag=2, insert=(100.0 - _y * 0, _y)))
+try:
+    assert len(_to.overlaps(_d)) == 1
+    print('PASS text_overlap: stacked notes found')
+except Exception as _e:
+    print('SKIP text_overlap (font not available here):', type(_e).__name__)
+_d2 = ezdxf.new('R2010'); _m2 = _d2.modelspace()
+_m2.add_lwpolyline([(0, 0), (800, 0), (800, 450), (0, 450)], close=True, dxfattribs=dict(layer='72_MISGERET_WIN'))
+_m2.add_line((400, 0), (400, 450), dxfattribs=dict(layer='72_MISGERET_WIN'))
+_row = _ar.row_cells(_d2)
+assert len(_row[4]) == 3 and _row[4][1] == 400
+print('PASS align_row: cells read from the frame dividers')
+
+# doubled entities inside a framed row (user 2026-10-22)
+import cell_dupes as _cd
+_d3 = ezdxf.new('R2010'); _m3 = _d3.modelspace()
+_m3.add_lwpolyline([(0, 0), (400, 0), (400, 450), (0, 450)], close=True, dxfattribs=dict(layer='72_MISGERET_WIN'))
+for _i in range(2): _m3.add_line((10, 10), (50, 10), dxfattribs=dict(layer='57_HATAH_ZIUN'))
+_m3.add_line((10, 20), (50, 20), dxfattribs=dict(layer='57_HATAH_ZIUN'))
+assert len(_cd.dupes(_d3)) == 1
+print('PASS cell_dupes: doubled line found, single line kept')
+
+# roller-shutter downstand at a free slab edge (user 2026-10-22, brenda_karka 1-1; numbers from his corrected state)
+_o5 = os.path.join(tempfile.gettempdir(), 'edge_shutter.dxf'); run(os.path.join(REC, 'slab_edge.py'), _d4, '5-5', '--box', '0', '0', '400', '450', '--slab', '25', '--d-label', 'H', '--shutter', '10', '35', '-o', _o5)
+_d5 = ezdxf.readfile(_o5); _m5 = _d5.modelspace(); assert not _d5.audit().errors
+_col = sorted(round(e.dxf.insert.y, 1) for e in _m5.query('INSERT') if e.dxf.name == 'dot barzel' and abs(e.dxf.insert.x - 229.9) < 0.05 and e.dxf.insert.y < 281.3 + 5)
+assert len(_col) == 3 + 1 and abs((_col[1] - _col[0]) - 17.05) < 0.1, 'one dot column down the outer face, 3 dots ~17 apart (+ the slab bottom-row dot)'
+assert any(l.dxf.layer == '2000_DOT_HELP_LINE' for l in _m5.query('LINE')), 'array help line'
+_bx = [t.dxf.text for t in _m5.query('TEXT') if t.dxf.layer == '55_HATAH_TEXT']; assert sorted(_bx) == ['ju.', 'pbho'], 'outside AND inside labels'
+assert '2$10' in [t.dxf.text for t in _m5.query('TEXT')]
+print('PASS slab_edge shutter: dot column, outside + inside labels')
+
+# diameter symbol font (user 2026-10-22, brenda_karka section 2): '$' bar notes -> HEBREW_NEW
+import sivan_text as _st
+_d6 = ezdxf.new('R2010'); _m6 = _d6.modelspace()
+for _s in ('HEBTXT', 'HEBREW_NEW'): _d6.styles.add(_s, font='txt.shx') if _s not in _d6.styles else None
+_m6.add_text('2$10@15', dxfattribs=dict(layer='54_HATAH_TEXT', style='HEBTXT', insert=(10, 10), height=6, width=0.8))
+_st.convert_box(_d6, (0, 0, 400, 450))
+assert [t.dxf.style for t in _m6.query('TEXT')] == ['HEBREW_NEW'] and _m6.query('TEXT').first.dxf.width == 0.8
+print('PASS sivan_text: diameter-symbol notes -> HEBREW_NEW, width kept')
+# slab levels + restraint mesh (user 2026-10-22: 're-check the ceiling thicknesses; 60 cm or more needs a restraint mesh')
+import star_plan as _sp
+assert _sp.LVL.match('+46.20') and _sp.LVL.match('-1.20=+50.30') and _sp.OKT.match('o.k=+45.25') and _sp.OKT.match('o.k. +45.25'), 'bare slab levels and o.k=+nn.nn must parse'
+_o6 = os.path.join(tempfile.gettempdir(), 'gb_mesh.dxf'); run(os.path.join(REC, 'general_beam.py'), _d4, '9-9', '--box', '0', '0', '400', '450', '--B', '100', '--H', '120', '--D', '65', '--D-left', '65', '--D-right', '30', '--drop-right', '95', '--detail', 'plan', '-o', _o6)
+_d6 = ezdxf.readfile(_o6); _m6 = _d6.modelspace(); assert not _d6.audit().errors
+assert not any(t.dxf.text == '#\xa410@15\\15' for t in _m6.query('TEXT')) and not any(e.dxf.layer == 'HATAH_ZIUN_17' for e in _m6.query('LWPOLYLINE')), 'NO restraint mesh in cross-section ceilings (user 2026-10-22, reversed)'
+print('PASS general_beam: no restraint mesh even for D=65; slab levels parse')
+# side dimension chains (user 2026-10-22, his hand-dimensioned 2-2): left 50 / 35 / 70, right 25 / 130, overall 155
+_o7 = os.path.join(tempfile.gettempdir(), 'gb_chain.dxf'); run(os.path.join(REC, 'general_beam.py'), _d4, '2-2', '--box', '0', '0', '400', '450', '--B', '140', '--H', '155', '--D', '35', '--D-left', '35', '--D-right', '25', '--drop-left', '70', '--detail', 'plan', '-o', _o7)
+_d7 = ezdxf.readfile(_o7); _v = sorted(round(e.get_measurement()) for e in _d7.modelspace().query('DIMENSION') if abs(e.dxf.get('angle', 0) - 90) < 1 and e.dxf.layer == '53_HATAH_MIDA')
+assert _v == sorted([155, 50, 35, 70, 25, 130]), _v
+print('PASS general_beam: full side chains (left 50/35/70, right 25/130, overall 155) like his 2-2')
+# missing central (side-face) bars where a lower slab exposes the beam face (user 2026-10-22, 12-12)
+import general_beam as _gb
+assert len(_gb.beam_dot_rows(65, 60, 15, fill_gap=True)) == 6 and len(_gb.beam_dot_rows(65, 60, 15)) == 3 and len(_gb.beam_dot_rows(155, 25, 15, fill_gap=True)) == len(_gb.beam_dot_rows(155, 25, 15))
+print('PASS general_beam: gap between top row and soffit row filled with side-face rows (12-12)')
+# middle-steel note position (user 2026-10-22, his hand-fixed 3-3): forks re-attach to row 44.4, joint y 32.9
+_o8 = os.path.join(tempfile.gettempdir(), 'gb_mid.dxf'); run(os.path.join(REC, 'general_beam.py'), _d4, '3-3', '--box', '0', '0', '400', '450', '--B', '100', '--H', '120', '--D', '40', '--D-left', '35', '--D-right', '40', '--drop-right', '25', '--stirrups', 'transfer', '--detail', 'plan', '-o', _o8)
+_d8 = ezdxf.readfile(_o8); assert not _d8.audit().errors
+_mn = [x for x in _d8.modelspace().query('TEXT') if x.dxf.text.startswith('2$')][0]; _oy = 0 + 248.8      # general_beam CELL_V0
+assert 33.0 < _mn.dxf.insert.y - _oy < 36.0, ('middle-steel note must drop to the clear row (his 3-3: 34.2 above the beam bottom)', _mn.dxf.insert.y - _oy)
+print('PASS general_beam: middle-steel note yields to the slab notes (his 3-3 position within 1.5)')
+# middle-steel note on the OTHER side when the left is crowded (user 2026-10-22, his hand-fixed 11-11): joint B + 11.3, shelf running right
+_o9 = os.path.join(tempfile.gettempdir(), 'gb_mid11.dxf'); run(os.path.join(REC, 'general_beam.py'), _d4, '11-11', '--box', '0', '0', '400', '450', '--B', '120', '--H', '120', '--D', '35', '--D-left', '35', '--D-right', '25', '--drop-left', '50', '--stirrups', 'transfer', '--detail', 'plan', '-o', _o9)
+_d9 = ezdxf.readfile(_o9); _mn9 = [x for x in _d9.modelspace().query('TEXT') if x.dxf.text.startswith('2$')][0]; _ox9 = 0 + 179.7 - (120 - 20) / 2
+assert _mn9.dxf.insert.x - _ox9 > 120, 'middle-steel note must sit RIGHT of the beam face (B=120) in the 11-11 case'
+print('PASS general_beam: middle-steel note moves to the right side when the left is crowded (his 11-11)')

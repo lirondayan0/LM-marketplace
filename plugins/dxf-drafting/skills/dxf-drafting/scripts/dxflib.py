@@ -17,6 +17,44 @@ def load_profile(name='israeli-structural'):
     with open(os.path.join(PROFILE_DIR, name + '.json'), encoding='utf-8') as f: return json.load(f)
 r = lambda v: (round(v.x, 1), round(v.y, 1))
 
+STIRRUP_EXT = {      # beams wider than the user's tables (200): learned 2026-10-21 from the 2 x 38 table rows
+    'standard': dict(n=lambda T: 1 if T <= 45 else 2 if T <= 80 else 3 + (T - 85) // 40, c={2: 5.6, 3: 5.4, 4: 7.8, 5: 9.3}, c_far=9.5),
+    'transfer': dict(n=lambda T: 1 if T <= 30 else 2 + (T - 35) // 30, c={2: 4.0, 3: 4.0, 4: 5.3, 5: 7.3, 6: 6.9, 7: 8.1}, c_far=8.0)}
+
+STIRRUP_MAX_W = 40.0      # user 2026-10-21: one hoop = two branches, at most 40 cm apart
+
+def stirrup_extend(key, kind='standard'):
+    """(n, w) for a stirrup-bearing width KEY (multiple of 5, cm) beyond the user's tables (conventions 'STIRRUPS beyond 200'): number n starts from the fitted progression (a new stirrup every 40 cm standard /
+    30 cm transfer); width w = next multiple of 5 above (key-6)/n + c(n) (c = overlap allowance), bumped until the overlap n*w-(key-6) >= 8 per gap, and - USER RULE 2026-10-21 - w <= STIRRUP_MAX_W (40): the
+    two branches of a hoop are at most 40 cm apart, so when w would exceed 40 another stirrup is added. UNVERIFIED by the user above 200."""
+    E = STIRRUP_EXT[kind]; n = E['n'](key); span = key - 6
+    while True:
+        if n == 1: return 1, span
+        c = E['c'].get(n, E['c_far']); w = int(-(-(span / n + c) // 5) * 5)
+        while (n * w - span) / (n - 1) < 8: w += 5
+        if w <= STIRRUP_MAX_W: return n, w
+        n += 1
+
+def mid_steel(B, H, hollow=False):
+    """'Middle steel' (side-face / skin bars between the top and bottom bars; the note `2$d@s`): (diameter mm, max spacing cm, note) - the user's rule (2026-10-21): beam section area B*H < 2000 cm2 -> 8 @ 20;
+    2000..10000 -> 8 @ 15; > 10000 -> 10 @ 15; a beam supporting precast hollow-core units -> 12 @ 20 whatever the size."""
+    if hollow: d, sp = 12, 20
+    else:
+        A = B * H; d, sp = (8, 20) if A < 2000 else (8, 15) if A <= 10000 else (10, 15)
+    return d, sp, f'2${d}@{sp}'
+
+def stirrup_layout(width, kind='standard', profile='israeli-structural'):
+    """(n, w, note, key): number of stirrups, width of each, note text, table row used, for a stirrup-bearing width (beam thickness / stem) in cm - the user's two tables (profile 'stirrup_tables',
+    2026-10-15): kind 'standard' (Φ12@15) or 'transfer' (beams carrying a new element rising from them, Φ12/14/16@15 by shear load). The row is the next multiple of 5 above the width; the tables cover
+    15..200, wider beams use `stirrup_extend` (rule fitted to the tables, 2026-10-21)."""
+    T = load_profile(profile)['stirrup_tables'][kind]; key = max(15, int(-(-width // 5) * 5))
+    if str(key) not in T['rows']:
+        top = max(int(k) for k in T['rows'])
+        if key < top: raise ValueError(f'no {kind} stirrup row for width {width} (table covers 15..{top})')
+        import sys; print(f'NOTE stirrup table: width {width:g} is beyond the user table ({kind}: 15..{top}): extended by the fitted rule (dxflib.stirrup_extend) - UNVERIFIED by the user', file=sys.stderr)
+        n, w = stirrup_extend(key, kind); return n, w, T['note'], key
+    n, w = T['rows'][str(key)]; return n, w, T['note'], key
+
 def hebrew_style(doc, name):
     s = doc.styles.get(name) if name in doc.styles else None
     font = (s.dxf.font if s else '').lower().rsplit('.', 1)[0]

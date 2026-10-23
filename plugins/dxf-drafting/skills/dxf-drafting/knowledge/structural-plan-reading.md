@@ -33,3 +33,6 @@ Hidden (above-slab) items are dimensioned as hidden, never merged with visible f
 - 15_DASHED thin strips (15 x ~1000) at beam faces = BEARING TEETH of plank (Luchad) beams (user 2026-10-13); they sit INSIDE the overall width drawn by the 93_KORA lines (80/65 beam = KORA faces 80 apart, teeth 15 + 50 + 15). Resolves the earlier open question about these strips. `0_LUHADIM_SHEN` (dashed) is the same family ('shen' = tooth).
 - Stairs on `15_DASHED` (hidden = above the slab): equally spaced parallel step lines (tread 27) = a flight; the stair cell itself is the wall cell on 82_KIR_OLE + the 6_HATCH symbol.
 - Stair marks (blue clouds): the user wants the stair as ONE block: overall length and width of its 15_DASHED drawing (east 335 x 233, west 125 x 54), nothing inside.
+
+## Beam with a tooth (ledge), read from the plan (user 2026-10-15)
+Three parallel lines at the cut: outer face, dashed line (15_DASHED = face of the wall ABOVE, hidden from below), other outer face. Wall part = stem, remainder = ledge for the hollow-core panels (the bay with `D=a+b`). Compare slab levels on both sides (`-4.40=+66.10` vs `-4.55=+65.95`). A wall rising from the stem makes it a transfer beam. See conventions/section-drawings.md 5d.

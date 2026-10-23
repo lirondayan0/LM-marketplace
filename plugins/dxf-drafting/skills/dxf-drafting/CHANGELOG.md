@@ -1,5 +1,9 @@
-# Changelog: what the skill learned, newest first (one line each: date, what, why)
+﻿# Changelog: what the skill learned, newest first (one line each: date, what, why)
 
+- 2026-10-22 (shutter corrections): learned from the user's hand edits of brenda_karka 1-1 (learn_diff): one dot column + help line instead of 2 bottom dots, shelf at downstand bottom, inside + outside boxes on one line; slab_edge.draw_shutter updated and checked against his file.
+- 2026-10-22 (roller shutter recipe): slab_edge.py --shutter B H + star_plan.roller_shutter(); drawn on brenda_karka 1-1. Beam sections with the layer still undone; no regression test yet.
+- 2026-10-22 (roller shutter): user created layer automatic_Roller_shutter = dimension text (b/h) of a roller-shutter beam on a beam/slab edge; its presence means ADD the shutter beam (red-cloud template in brenda_karka) to that section. Recorded in conventions/section-drawings.md; recipe not written (roadmap).
+- 2026-10-22 (wall above): user asked whether the brenda_karka example 'beam with a wall rising above' is clear, then said to determine the wall thickness per case. Recorded in conventions/section-drawings.md (thickness = wall faces on 82_KIR_OLE/15_DASHED at the cut, never the example's 17; critique of the example). No recipe written yet (roadmap).
 - 2026-10-14 (workflow): user summarised the workflow (plan / claude_kontur / claude_DIM Xlines / red cloud beside the plan = the layer used to draw dimensions). Added `plan_xlines_lf.dim_template()` (layer + dimstyle of the dimension inside that cloud), wired into plan_xlines, plan_clouds, plan_round --scan; test added (27 PASS). Canonical workflow text now tops conventions/plan-dimensions.md.
 - 2026-10-14 (improve): new entry point `recipes/plan_round.py` (--scan / dry / --write; verifies boundary, collisions, chain-end gaps); `plan_xlines_lf.plan_outline()`; tests for claude_Kontur + plan_xlines (26 PASS). Finding: claude_Kontur is ~60 outside the wall polygon 4AD my chains stop at (conventions rule 13, open question to the user).
 - 2026-10-14 (kontur): user created layer `claude_Kontur` = boundary of the work plan; added `plan_xlines_lf.kontur_outline()` and wired it into plan_xlines.py / plan_clouds.py (fallback = biggest closed 82_KIR_OLE). Conventions rule 12. Tests: 24 PASS.
@@ -97,3 +101,189 @@
 - 2026-10-14: kontur_loops + multi-region rounds in plan_round (user: app captured a small part; plan = claude_Kontur); app scan/finish use all regions; rule 15.
 - 2026-10-14: recipes made relocatable (no ~/.claude path; sys.path from __file__) for the DimPlanApp bundle. Pitfall: IExpress AppLaunched must call `powershell -File setup.ps1` (a bare `cmd /c install.cmd` is not found when NoDefaultCurrentDirectoryInExePath is set); sandboxed bash heredocs with large quoted bodies fail -> use the Write tool for files.
 - 2026-10-14: kontur_analyze (robust claude_Kontur reader, repairs, nested/dup/gap/overshoot) + 11 tests; app 1.0.1 (scan shows repairs, blocks Generate on an unreadable boundary); hayahalon5.dxf 46 -> 539 dims.
+- 2026-10-14: dim_template accepts a frame around dimension line+text only (user legend file); multi-region aware; test added; app 1.0.2 (?lang=en|he URL switch); instruction document written with python-docx (no node here; Word COM ExportAsFixedFormat + pymupdf to check pages).
+- 2026-10-14: Hebrew instruction document (python-docx RTL recipe: sectPr bidi, paragraph bidi, run rtl, tblBidiVisual, theme fonts removed, 'פרק N:' headings because '1.' reads wrong in RTL, Latin identifiers in LRM-wrapped code runs). Generators kept in DimPlanApp\docs (make_doc.py EN, make_doc_he.py HE).
+- 2026-10-15: ledge_beam.py cast kind: --sides left (mirror image, slab on the left); template_texts whole-file fallback. Evidence: sections_ramla.dxf star marker.
+- 2026-10-15: star-marker workflow + mirror cast section marked verified by the user.
+- 2026-10-15: frame/template-row rule verified by the user (section 1-1 in cell 1).
+- 2026-10-15: SKILL.md markup vocabulary: star marker + frame/template row.
+- 2026-10-15: star-marker layer renamed claude_sections -> automatic_sections (user); scan both names, case-insensitive.
+- 2026-10-15: star batch 2 (3 types, 9 pairs).
+- 2026-10-15: star_orient.py (clockwise marks); edge beams share one section.
+- 2026-10-15: star_orient --tidy: turned pair centred on beam axis, east of the label (user red cloud example).
+- 2026-10-15: star_orient place_numbers (turned-mark number centred), pitfall: INSERT move leaves attribs.
+- 2026-10-15: consolidated 'STAR MARKERS' section (6-step chain), history entry, star_orient test, SKILL.md ability line.
+- 2026-10-15: star_orient: numbers rigid with the block (user's final turn example); label-clearing removed (unconfirmed); tests updated.
+- 2026-10-15: batch 3 (65/65 one-side ledge = 3-3); free slab edge pair listed, not drawn.
+- 2026-10-15: slab_edge.py (free slab edge section, 4-4) + convention 5b.
+- 2026-10-15: slab_edge.py rewritten from the user's correct ceiling-edge detail (U bar, dot barzel, bar-shape detail + note); my first version superseded.
+- 2026-10-15: user's two stirrup tables (standard / transfer) -> profile stirrup_tables, dxflib.stirrup_layout, ledge_beam --stirrups, transfer_check.py, tests; replaces the old overlap rule; sections 2-2 / 3-3 redrawn.
+- 2026-10-15: transfer beam = any vertical element on the beam strip (user's red-cloud example, 26x37 pier on the 80/65 beam); transfer_check --pairs, beam_strip; 2-2 redrawn with --stirrups transfer.
+- 2026-10-15: general_beam.py (parametric 6-6) + untagged-beam rule (B from geometry, height symbol h, min H 40); star pair 5-5.
+- 2026-10-15: untagged-beam rule (general_beam, h symbol, H 40) marked verified; step-3 decision table written down.
+- 2026-10-15: general_beam --stirrups transfer (2 x 25 for B=40); star pair 6-6 (east wall-beam, turned to S).
+- 2026-10-15: engineer reading of a beam (stem / ledge from the dashed wall face, bay side, levels, walls above): 6-6 redrawn as ledge beam with h symbol (ledge_beam --h-label); star_orient no longer flips N/S pairs.
+- 2026-10-15: star_plan.py (planner of the whole star-marker chain, reproduces the gallery), dashed-line ledge detection (both sides / one side / snap to 5), consolidated workflow in SKILL.md.
+
+- 2026-10-15: star_plan.py: --kontur (only pairs inside closed claude_Kontur regions; others reported), --cells-at X Y (own rows beside THIS plan, numbering restarts per plan); fixed stray  in TAG2 (slanted-beam tag never matched).
+- 2026-10-15: recipes/center_titles.py: section title + 1:25 (+ note) centred on the section centre line per the user example (title insert = centre+26, scale start = centre-7.7), one y per row. Constants are for cells at x0=95503 of sections_ramla.dxf; adjust cell list per file.
+- 2026-10-15: conventions STAR MARKERS round rules (kontur scope, numbering per plan, frames beside the plan, title block centring); pitfalls (hidden  in regex, locked output file, RTL text insert); INDEX + SKILL.md updated; center_titles.py made generic and wired into star_plan --draw.
+- 2026-10-15: ledge_beam.py --solid/--solid-D/--solid-drop (solid slab beside a ledge beam, user 6-6 geometry); sections 3-3 / 4-4 of plan C redrawn.
+- 2026-10-15: knowledge/hollow-core-geometries.md - the 18 section geometries of the user gallery (blocks read, classified, numbers exact, readings UNVERIFIED).
+- 2026-10-15: ledge_beam --solid: full dimension chain on the slab side (gallery check); 3-3 / 4-4 of plan C regenerated; hollow-core-geometries.md cross-check.
+- 2026-10-15: rule: D=10 label above a solid slab = raised/double floor, not drawn in sections.
+- 2026-10-15: ledge_beam: solid bars on 57_HATAH_ZIUN anchored D into the stem; stirrup leg dims west; star_plan --stirrups override; 3-3/4-4 regenerated with standard stirrups.
+- 2026-10-16: S / SS section marks replace '*' (S = reinforcement as per plan, SS = X$XX notes chosen by the engineer); `--detail plan|ss` in the section recipes, planner reads the mark; test added.
+- 2026-10-16: star_plan.py considers only UNNUMBERED marks (S/SS/*); first S/SS round on plan C = 8-8 (65 wide wall-beam, H=70 and D=30 from the labels -> general_beam --D 30 --H 70) and 9-9 (100/150 ledge beam, SS). Pitfall: a recipe --box overlapping another section's overflow clears it (5-5 slanted wall spills below its cell) - keep new frames clear of the 758-high row.
+- 2026-10-16: learned the user's hand fixes of 8-8 (S: beam bar callouts -> as-per-plan notes, shelf 46.2/47.1, bar leaders removed) and 9-9 (SS: X$XX shelf 34.3, HEBREW_NEW); apply_detail rewritten, --detail default none, planner passes plan/ss; tests added.
+- 2026-10-16: round 2 of S/SS on plan C: 10-10 (S, 100/150 ledge beam, slabs 40 (left/south) and 35 (right/north) read from the plan labels - the planner took only 35+7, fixed by hand; transfer table from detection) and 11-11 (SS, 30/90 cast edge beam with cores both sides D=32). TODO: planner should read the slab label on EACH side of a untagged beam.
+- 2026-10-16: user fixes of 10-10/11-11: two-digit titles digit-reversed (title_name), SS on a cast beam = X$XX on the beam bar callout, slab notes per plan (blue cloud = beam, pink = slab); tests added.
+- 2026-10-16: round 3 S/SS: 12-12 (SS 65/230 cast with cores, transfer; the 230 beam overflows the 400x450 cell) and 13-13 (S, tilted pair rot 81 across the 80/70 slanted beam; star_orient.pairs now accepts tilted pairs within 6 deg, view snapped to the nearest 90 deg). Frame rows added at y 59700 (cells x 95503+400k).
+- 2026-10-16: user's 12-12 fix: SS on a cast beam turns BOTH 4$12 and 2$12 into X$XX (apply_detail, test updated; 11-11 bottom callout aligned).
+- 2026-10-16: template rows of 10 cells (star_plan --make-rows / --cells-at, rows_free); 3 rows created at x 95503, y 59150/58600/58050 beside plan C.
+- 2026-10-16: the user arranged the sections in 10-cell rows (x0 94660, frames 781 / 719 high, reading order); planner rows_free now follows that format (tall frames, box = top 450, new row touching below); center_titles handles 4000-wide rows and only the rows just filled.
+- 2026-10-16: STANDING layout rule - rows of 10, new row after 10 sections, row height computed so every section incl. its reinforcement fits (section_extent / need_height / layout_cells / find_rows in star_plan.py); sections hang from a common title line.
+- 2026-10-16: S/SS sections are STANDARD beams: planner default --stirrups standard; 1-1, 2-2, 9-9, 10-10, 12-12 regenerated; clear_cell keeps layer claude; apply_detail window taller for tall beams.
+- 2026-10-16: user's standard stirrup table re-marked (pasted picture in a red cloud): row 50 = 2 x 30 (was 1 x 44); profile + tests fixed; 1-1, 2-2, 6-6, 13-13 redrawn. Knowledge: empty-looking clouds hold OLE pictures.
+- 2026-10-16: stirrups inside cast/general beam sections now follow the table (n overlapping rectangles) - draw_stem_stirrups; 8-8 and 12-12 redrawn (user's red clouds).
+- 2026-10-16: new marker ST = S with transfer stirrups; stirrup table now chosen per mark in star_plan.py (S/SS standard, ST transfer); test added.
+- 2026-10-16: first ST section 14-14 (80 x 300 ledge beam + solid slab left, transfer stirrups); row 2 extended to 851. TODO planner: read H from the segment label, detect solid slab + level step.
+- 2026-10-18: user rule: slab beside a section with no thickness on the plan = SOLID slab with parametric thickness `H`; red cloud 'casting completion' on the plan = solid slab between the beams. ledge_beam.py `--solid-label H` (thickness dim carries the symbol); test added; 6-6 of sections_ramla.dxf redrawn (east side solid). Planner (star_plan.py) does not yet read the cloud / default to H - roadmap.
+- 2026-10-18: ledge_beam.py cast kind accepts `--solid left --solid-D D --solid-label H` (hollow slab one side, solid the other); 6-6 redrawn as cast + solid east, 7-7 as cast + solid west; audit of all cuts of the Ramla plan vs their sections (x-section of the cut line with 93_KORA / 0_LUHADIM_SHEN lines); test added.
+- 2026-10-19: scripts/cut_crossings.py (plan lines crossed by every cut pair) + SKILL.md/INDEX review recipe.
+- 2026-10-21: NEW `scripts/shx_width.py` (real SHX text widths), NEW `recipes/leader_fit.py` (shelf = text, text on its shelf, orphan shelf gets forks) called from `ledge_beam.finish`; `apply_detail` no longer deletes the beam-bar forks of the S top note. Why: user asked leaders to point to the relevant bars with length matched to the text, neat (example 1-1). Applied to the Ramla sheet (12 shelves, 8-8 forks). Tests +1.
+- 2026-10-21: leader_fit.py snaps bar-callout fork tips onto the dot centre (user's red cloud on 2-2 = tip beside the dot; my audit tolerance 1.5 had hidden it).
+- 2026-10-21: leader_fit snaps slab-note tips to distinct dot centres (user's 7-7 / 8-8 hand corrections: tips on dots, a dot added, bottom-right 8-8 note slid).
+- 2026-10-21: NEW recipes/bar_arrays.py (bar dots -> associative arrays via accoreconsole; user's red cloud example = one ARRAYRECT row), leader_fit reads dots inside arrays; pitfalls note on accoreconsole under git-bash. Applied to the Ramla sheet (90 arrays).
+- 2026-10-21: user approved the bar-array result; convention marked confirmed, roadmap item 10 (planner should finish with leader_fit + bar_arrays).
+- 2026-10-21: hoop diameter by table in ledge_beam / general_beam (S $12, ST $12/14/16 incl. section note and U notes; general_beam $8@15 -> table note); 14-14 corrected; tests updated. [SUPERSEDED by the next line]
+- 2026-10-21 (correction): only the clouded tall-stirrup note of ST sections is 12/14/16; section note and U note stay $12 (user reverted the other two on 14-14); ledge_beam change reverted accordingly, test restored.
+- 2026-10-21: star_plan --draw: (1) planner needs `--min-y/--max-y` for plans above y 40000 (default max-y 40000 silently finds nothing); (2) child recipes run with `python -I`, so ledge_beam now adds its own dir to sys.path (leader_fit import) and subprocess output is decoded with errors='replace' - a crash there renumbered the marks WITHOUT drawing the sections (draw by hand with the printed ledge_beam commands); (3) a section taller than its row (17-17, beam 270) must be shifted into the frame, then bar_arrays. Added 15-15 (SS), 16-16 (ST), 17-17 (S) to row 2.
+- 2026-10-21: 17-17 redone (user: "incorrect"): planner took B/H from the tag `100/270` of the crossing beam above; the cut's own strip is 80 wide with the segment label `H=80` -> beam 80x80, ledge on the west (hollow 25+7 left), SOLID D=30 on the east (marker D=30 at the same -1.70 -> drop 0): `--kind ledge --sides left --solid right --solid-D 30 --solid-drop 0`. Planner gaps (as for 14-14): read H from the segment label `H=nnn` along the cut, ignore tags of other beams, detect solid side from `D=nn` without `+`.
+- 2026-10-21: hollow-core circles scale with panel thickness (ledge_beam.core_row, r=p/5 above p=25); 5-5 right cores enlarged r=8 (user cloud). Tests pass.
+- 2026-10-21: hollow-core cores = obrounds (user), core_row/obround in ledge_beam, tests updated, sheet converted (26).
+- 2026-10-21: section marker blocks (hat) scaled x0.8 by the user's request (1.328 -> 1.0624; attributes scaled about the insert); star_orient.K updated. Reading of 'reduce by 0.8' = factor 0.8 (UNVERIFIED). REVERTED same day: the user meant the OBROUND opening markers in the slab sections, not the plan cut marks (hat stay 1.328).
+
+- 2026-10-21 (brenda_karka.dxf): star pairing now prefers the file-adjacent INSERT (nearest-neighbour mis-paired marks 245 apart -> wrong cuts, 2 pairs lost); star_plan: tag layer 45_TEXT_KORA accepted (TAGL), beam inventory gaps -> B from the cut's two 93_KORA crossings + same-width tag on the beam line, beam with no hollow label -> general_beam with SOLID slab D both sides (D=25 template when no label, UNVERIFIED); always check free space (extents) before --cells-at: the first row landed on existing bar details; star_plan needs --max-y 1e9 for plans at y>40000.
+
+- 2026-10-21: recipes/sivan_text.py - Hebrew notes (HEBREW_NEW / MIRYL) of generated sections become the user's SIVAN note (width 0.7, mirrored, insert kept so it stands on its shelf); run by ledge_beam.finish before leader_fit (user: red cloud on unreadable 'c/g/ kph ,fw'). Numbers/symbols stay.
+
+- 2026-10-21: STANDING PROCEDURE for 'create cross-sections' written to conventions/section-drawings.md + SKILL.md + pitfalls (user: 'good work, do it this way').
+
+- 2026-10-21: recipes/rebar_color.py - rebar (57_HATAH_ZIUN) entities ACI 5 blue, layers unchanged; hooked into ledge_beam.finish (user: 'use the layers you used so far, rebar blue').
+
+- 2026-10-21: rebar colour corrected ACI 5 -> ACI 4 (user recoloured stirrups in a red cloud; superseded rule 8 in section-drawings.md).
+
+- 2026-10-21: recipes/sections_round.py (autonomous section round, tested on a copy of the original brenda_karka -> same 6 sections); star_plan --max-y default 1e9; INDEX + SKILL.md updated (user: 'next time do it on your own').
+
+- 2026-10-21: rebar_color.py now sets LAYER colours from the user's table and clears entity overrides (he reorganised the layer colours himself).
+
+- 2026-10-21: recipes/ok_marker.py ('OK per plan' o.k block on every section, offset measured from the user's 1-1) + hooked into sections_round.
+
+- 2026-10-21: assets/o_k_block.dxf (user's o.k block) imported by ok_marker.py when a file lacks it; rebar_color.py defines missing layers (a layer the file never defined renders colour 7).
+
+- 2026-10-21: sections_round.find_place: RIGHT of the plan first, 1000 clearance, top 350 below the plan top (user moved the template there himself).
+
+- 2026-10-21: bar_arrays.py accepts any dot width (0.5-3, chord ~ width); sections_round runs it as the last write step (user: 'draw the reinforcement as an ARRAY').
+
+- 2026-10-21: SKILL.md 'PROACTIVE SECTION PLANS' standing agreement + conventions summary (user: do section rounds without being asked).
+
+- 2026-10-21: general_beam.py wide beams (B>30) get top / bottom bar rows across the width (5.9 / 10.15 max steps); all 6 sections of brenda_karka redrawn (--replace) + finish passes + arrays (user: red clouds, 'beam missing its rebar detailing, do all beams').
+
+- 2026-10-21: end-to-end verification of sections_round on the original brenda_karka; regression test for wide-beam bar rows; redraw procedure + open question recorded.
+
+- 2026-10-21: general_beam.py learned the user's hand-organised 1-1 / 2-2 (right slab dim, top note forks, skin note row, centred stirrup note); sections 3-6 of brenda_karka redrawn, 1-2 untouched; regression test for the dims.
+
+- 2026-10-21: general_beam right slab dim now p = B+58.9, base B+76.8 (user's cloud on 1-1); 2-2 fixed surgically, 3-6 regenerated.
+
+- 2026-10-21: per-side slab D / level drop (S_M markers + o.k. beam level) in star_plan + general_beam; ok_marker finds the beam face from the lowest outline line; brenda_karka sections 3-8 redrawn, marks renumbered (user: double-check the ceiling thicknesses).
+
+- 2026-10-21: star_orient pair limit 320 -> 500 (a 380-apart ST pair was never drawn); stirrup_layout falls back to the last table row with a WARNING (250-wide beam); section 9-9 added on brenda_karka; end-of-round pair count check recorded.
+
+- 2026-10-21: sections_round COVERAGE check + warnings; full chain re-verified on a copy of the original brenda_karka (11 pairs -> 9 sections, 0 unnumbered, audit 0); SKILL.md proactive paragraph updated.
+
+- 2026-10-21: ok_marker.py --once (marker written once per sheet, default 2nd section); sections_round uses it; brenda_karka: 7 duplicates removed (user deleted it in 1-1 and said once is enough).
+2026-10-21 slab bottom bar 60 into beam (general_beam/ledge_beam)
+- 2026-10-21 bar_anchor_marked.py + slab bottom bar 60 rule (section-drawings.md), patch-script pitfall
+- 2026-10-21 bar_anchor_dims.py (both-side dims rule)
+- 2026-10-21 bar_anchor_dims removed (misread); stem_side_dims.py added
+- 2026-10-21 side_chain_dims.py
+- 2026-10-21 center_sections.py
+- 2026-10-21 section_gaps.py
+- 2026-10-21 align_titles.py, vertical-centring rule superseded
+- 2026-10-21 dxflib.stirrup_extend: stirrup n/w rule beyond 200 fitted to the user's tables
+- 2026-10-21 stirrup extension capped at 40 (hoop branches max 40 apart)
+- 2026-10-21 9-9 restaggered to 9 x 40
+- 2026-10-21 dxflib.mid_steel + general_beam middle steel by area
+- 2026-10-21 mid_steel_sheet.py applied to brenda_karka
+- 2026-10-21 SKILL checklist: middle steel; roadmap 11; pitfall absolute y
+
+- 2026-10-22: star_plan.py numbers section types clockwise round the plan (user rule: sequential + clockwise); start point north UNVERIFIED; not run on a real plan yet.
+
+- 2026-10-22: recipes/text_overlap.py (report + --fix) after user's red cloud on 6-6 (two notes 6.7 apart); brenda_karka: 3 pairs fixed (6-6, 7-7, 8-8 detail); SKILL checklist step 5 'no overlapping text'. Not yet inside generators (roadmap: leader placement must keep a 9 pitch at creation).
+
+- 2026-10-22: 6-6/7-7 bottom notes moved a further 3 down (clear of outline); rule added to conventions.
+
+- 2026-10-22: learned the user's fix of 6-6 (staggered notes, left/right, shelves 4.8 apart); text_overlap.py --fix now staggers stacked notes (upper left by gap 12, y from the dot row 17.2/22.0) instead of stacking; 7-7 redone to match. Lower note's +1 dot move is not automated (UNVERIFIED which dot is free).
+
+- 2026-10-22: slope_label.py + convention 'SLOPED SLAB': detection from slope note/arrow, level markers and cut-line direction; label drawn on 3-3 of brenda_karka. Panel membership not tested geometrically.
+
+- 2026-10-22: slope_label.py rewritten to the user's own 3-3 arrangement (label on the slab + LEADER slope arrow, top-bar notes moved aside; text_overlap.move_note(whole=True)); tested on the pre-edit snapshot, matches his positions.
+
+- 2026-10-22: slab_edge.py --slab-side right (mirror); star_plan edge_thickness + edge_slab_side; section 1-1 (D=80) drawn in brenda_karka at (-83000.7,187694). bar_arrays not run (file locked).
+
+- 2026-10-22: slab_edge.py draw_thick (user's 4-4 for D=80: mid mesh, edge bars, legs-100 U bar, shear-bench copy at 1:2 + arrow); slab always LEFT (mirror kept as --slab-side right but not used); star_plan passes --cut; section 1-1 redrawn in brenda_karka + bar arrays (4).
+
+- 2026-10-22: edge_thickness plan-wide fallback (3000), bench search 1500; section 2-2 (second free edge of brenda_karka plan) drawn in cell 2 via star_plan --first 2.
+
+- 2026-10-22: edge_thickness plan-wide fallback REMOVED (user: 2-2 incorrect); slab_edge --d-label H; --replace now also deletes LEADERs of the cell; 2-2 redrawn with H.
+
+- 2026-10-22: star_plan.wall_cut (8_KIR wall under the cut = general beam), edge branch also reads S_M slab markers; general_beam --d-label; 2-2 redrawn as general beam B=20 D=23 h; text_overlap fixed the '$12@15' pair of the side detail.
+
+- 2026-10-22: align_row.py (generic row alignment) + sections_round step 5c (align_row, text_overlap --fix) after the user's standing request; new row of brenda_karka aligned.
+- 2026-10-22: tests for text_overlap (stacked notes found) and align_row (cells from dividers); suite 0 FAIL. Still no test for slab_edge thick / slope_label / wall_cut (verified only against the user's cloud + renders).
+
+- 2026-10-22: cell_dupes.py + clear_cell fix (dot barzel, MH, LEADER) after the user's 'double reinforcement' clouds on 2-2; 16 stale dots + 10 identical duplicates deleted; sections_round runs cell_dupes --fix.
+
+- 2026-10-22: sivan_text.py also converts non-Hebrew notes containing '$' from HEBTXT to HEBREW_NEW (user corrected section 2 by hand; diameter symbol displays correctly only in HEBREW_NEW).
+
+- 2026-10-22: star_plan reads bare slab levels / 'o.k=' beam levels, picks the slab marker of the panel touching the beam (separator crossings) and widens when empty; general_beam draws the restraint mesh for slab sides >= 60; new recipes/redraw_general.py; text_overlap no longer crashes on notes without fork lines (user: re-check ceiling thicknesses + restraint mesh).
+
+- 2026-10-22: restraint mesh REMOVED from general_beam sections (user: there is no restraint grid in the ceilings); RESTRAINT_MESH=False, test inverted, 4 sections redrawn.
+
+- 2026-10-22: general_beam draws the full side dimension chains of the user's hand-dimensioned 2-2 (test); old side_chain_dims.py / stem_side_dims.py superseded.
+
+- 2026-10-22: 
+
+- 2026-10-22: beam_dot_rows(fill_gap) adds side-face rows between the top row and the soffit row when a lower slab exposes the beam face (12-12 missing central bar; test).
+
+- 2026-10-22: 
+
+- 2026-10-22: middle-steel note placement (general_beam _clear + recipes/mid_note_fit.py, hooked in sections_round, text_overlap skips it) from the user's hand-fixed 3-3.
+
+- 2026-10-22: general_beam puts the middle-steel note on the right side of the beam when the left is crowded (his 11-11, exact reproduction, test).
+- 2026-10-22: XREF sections (3841-CON_test.dxf): XREF geometry is cached in the block definitions (read it, never edit). New recipe xref_overlay.py + ledge_beam.OVERLAY flag (reinforcement only). Written for Sec 3, 10, 14; 7, 9, 13, 15 need new rules.
+- 2026-10-23: xref_overlay.py generalised for 4238-CON-1008-1009_section.dxf: plan XREF block can be EMPTY in the host -> `--plan-dxf` (DWG converted with accoreconsole `(command "_.DXFOUT" ...)` from Python, short ASCII dir; a `SAVEAS` script hung 300 s); plan name `LEV_-nn GD`; section names `... Section - -1 - Section N`; slab lines that run OVER the beam now count for both sides (D was 0); S-BEAM-1 outline that stops at the slab soffit -> beam top = slab top (H 43 -> 63); one-side slab -> NOT DRAWN instead of crash. Result: 2 of 7 pairs drawn (Sec 20, 21), 5 listed (7 no slabs, 12 + 14 free edge with downstand). bar_arrays failed ('no log') - not run.
+- 2026-10-23: XREF overlay slab bars run to the XREF slab END, not 60 cm from the beam (user's red cloud on 3841-CON_test 7-7 right; his own left side was already hand-extended = the rule). New recipe xref_extend_bars.py (27 bars fixed on 6 sections). Rule also in conventions/section-drawings.md. An empty red cloud above the sheet was ignored and reported.
+- 2026-10-23: xref_text_clear.py (new): host notes of XREF sections must not touch XREF text/lines or each other (user request). 3841-CON_test: 12 + 6 notes moved (level-marker texts +26.40/+26.75 were the usual victims: top-bar notes of Sec 3/7/15 sat on them), Sec 13 stirrup-detail labels moved below the section (hand move). Note: ezdxf text_extent of mirrored (RTL) text extends LEFT of the insert point.
+- 2026-10-23: BUG FIX xref_text_clear.py: leaders were CUT (shelf end moved +2.5, fork lines left behind -> slanted shelf + 2.5 gap) on 6 bottom-left notes, because the joint of a polyline shelf drawn free-end -> joint was assumed at p[0], so the own forks counted as obstacles (spurious move) and were not moved. Now joint = whichever end touches the fork LINEs; connectivity asserted before save (refuses to save a cut leader). User hand-fixed Sec 15 (red cloud); the other 5 (Sec 3, 7, 9, 10, 14) repaired.
+- 2026-10-23: xref_text_clear.py now clears text by HORIZONTAL slide with stretched leader (user's explanation); vertical lift is a reported fallback (--vertical). Earlier vertical moves restored from snapshot first (restore = per-handle copy from the pre-move .bak).
+- 2026-10-23: xref_extend_dots.py (new): dot rows follow the extended slab bars (learned from his hand-added dots in Sec 9 / 7). Pitfall hit: a dot template + offset must be computed from the TEMPLATE position, not the loop cursor (stacked duplicates; restored from snapshot).
+- 2026-10-23: SKILL.md XREF pipeline order + how-he-teaches note; pitfalls: isolate his edits (snapshot my own output), template-offset clone bug, run recipes twice (idempotence), no stdin REPL in tools.
+- 2026-10-23: reinforcement as ARRAY applies to XREF overlays: bar_arrays run on 3841-CON_test (51 arrays); pipeline order fixed (extend bars -> dots -> text clear -> arrays last).
+- 2026-10-23: tests/test_xref.py (new, standalone: python tests/test_xref.py): xref_extend_bars (reach + idempotent), xref_extend_dots (continue to 0.7 from slab end), xref_text_clear (note on an XREF level marker slides, leader with joint at the polyline END stays connected). All PASS.
+- 2026-10-23: LEARNED FROM HIS Sec 9 (wall above a beam, hand-reinforced) + 'no wall / beam / slab without reinforcement': xref_wall.py (reproduces his geometry to 0.1, test PASS), xref_junction.py (wall / slab junctions, judgment), xref_overlay --all, general_beam.draw(sides=...) (slab on one side only) and its middle-steel note now avoids the 2$12 bottom note. xref_text_clear: one text per shelf (best overlap, touching accepted), stacked second lines + several texts on one shelf move as a group, UNATTACHED notes are reported. 25 sections drawn on 3841-CON_test (179 arrays, 0 text overlaps by script except rotated labels, audit 0). Pitfall hit AGAIN: an empty `python -I -` heredoc in a tool call hangs - never.
+- 2026-10-23: SCOPE rule: xref_overlay draws only the requested sections; --all only on explicit request (user correction after 25 unrequested sections).
+- 2026-10-23: xref_overlay --write deletes the star marks of the sections drawn (--keep-marks to keep), per user request; tested on a copy.
+
+- 2026-10-23: recipes/xref_cores.py (hollow-core voids in XREF sections) + INDEX + conventions line.
+
+- 2026-10-23: xref_cores.py voids layer 10_PLADA_HATAH is green (ACI 3), also recolours an existing layer; convention + pitfall added (user correction).
+
+- 2026-10-23: xref_cores.py idempotency fixed (centre = mean of the obround's vertices; the first check never matched and a re-run would have doubled the voids).
+
+- 2026-10-23: star-mark deletion restated by the user as a standing XREF rule (conventions line; recipe already did it).
+
+- 2026-10-23: star marks of already drawn XREF sections deleted retroactively (user asked again, with a cloud example); end-state check = read_marks returns 0 pairs.
+
+- 2026-10-23: roadmap entry for the section-plan application (user's summary: 2 slab types x 2 file types).

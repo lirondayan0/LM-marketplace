@@ -68,3 +68,75 @@
 - ezdxf render of a dim with set_location splits the dimension line around the text when the text centre is too close (dim_50: 7 from line -> split; 10.7 -> whole). Count LINEs on the defpoint line inside the anonymous block after moving texts.
 
 - Packaging for other PCs: embeddable Python needs `._pth` with `Lib\site-packages`, the app dir and `import site`; isolated mode means no script-dir on sys.path (scripts must insert their own paths). IExpress exe returns immediately (installs async) and runs AppLaunched, not the /Q commands; call `powershell -File setup.ps1` explicitly.
+
+## Moving an INSERT does not move its ATTRIB entities (2026-10-15)
+`insert.dxf.insert = ...` leaves the attributes at their old WCS positions: the numbers of my moved/turned `hat` marks were left behind (user: "centre the text properly"). After moving/rotating/mirroring a block with attributes, re-place each `attrib` (local frame -> WCS: ins + R(rot)*(sx*lx*k, ly*k)); learn the offsets from a pair the user did by hand.
+
+## The user's dots can be nested anonymous dynamic-block refs (2026-10-15)
+`*Uxxx` INSERTs on layer `1922_ZIUN_DOT_T+I` wrap the plain block `dot barzel` (circle r1.25 + hatch) two levels deep (scale -0.896 / 0.896, rot 180). When reading a user detail, unwrap to the leaf block; when drawing, insert `dot barzel` directly with those scales on that layer (fallback: solid 2-pt polyline dot). A signature comparison (translate cell, round to 0.1, compare per entity key) is the way to prove a recipe reproduces a hand drawing.
+
+## A control character hidden in a regex literal (2026-10-15)
+`TAG2 = re.compile(r'...(\d+)')` had been saved with a real backspace (0x08) instead of backslash-b, so the pattern never matched and slanted-beam pairs were reported as "nothing". Symptom: a regex that "looks right" matches nothing; check with `od -c` / `ord()`. In patch scripts use raw strings and never write `` inside a normal string.
+
+## Output file locked by the CAD program (2026-10-15)
+`doc.saveas` raised PermissionError mid-task (file open in CAD, no side copy allowed): the snapshot is taken first, then stop and ask the user to save and close; re-read mtime and markers after they do (they save edits meanwhile).
+
+## Text runs right-to-left from its insert (2026-10-15)
+Hebrew title texts (mirrored style) extend LEFT of their insert and ezdxf's bbox counts the `%%U` codes: never centre them from the bbox. Calibrate on the user's hand-placed example (insert - centre = +26 at 9 high).
+
+- A red cloud that looks EMPTY may enclose a pasted picture (OLE2FRAME, extents inf, layer claude): extract the 310 hex chunks of the entity from the raw DXF -> `ÐÏà` compound file -> `olefile` stream CONTENTS = BMP (prepend 'BM' header if it is a bare DIB) -> view it. Never skip an 'empty' cloud.
+
+- **accoreconsole + git-bash (2026-10-21):** MSYS rewrites the `/i` `/s` switches, the console starts but never runs the script (hangs, no error). Launch it from PowerShell or Python subprocess, short ASCII paths (C:\arrtest). ARRAYRECT 2024: _COL n TOTAL, _R rows BETWEEN-distance elev; the array INSERT takes the current layer (set CLAYER); the source object is consumed, delete the other dots first. DXFOUT of a DXF keeps AC1032 and every other entity (checked).
+- **Scope of a correction (2026-10-21, hoops):** when the user marks specific notes and says 'only these', change exactly those; I had generalised a 12/14/16 change to every hoop note of the section and he had to revert two. Rule 4 (a correction is a rule for its whole family) applies to a mistake pattern, not to a spec the user limited with 'only' / 'otherwise as they are' - read the cloud contents first (list the clouded entities), then change nothing else.
+
+- star_plan --draw renumbers the marks even when a recipe subprocess failed: after any traceback check the titles exist before trusting the numbers (2026-10-21).
+
+- Ambiguous nouns ("section markers", "opening"): before touching anything, read the newest cloud on `claude` and name what it encloses. 2026-10-21: I scaled all 122 plan cut marks (`hat`) when the user's cloud meant the obround openings in the slab sections; undone by the inverse factor (not a snapshot restore, so the user's edits stayed).
+- A locked DXF (PermissionError, `.dwl` present) -> write a side copy only if told, say so, and re-run the SAME script on the original after the user closes CAD (never copy the side file over it: the user may have saved meanwhile).
+
+- (2026-10-21) star_plan/star_orient default `--max-y 40000` hides pairs of a plan placed at y=177000: pass `--max-y 1e9`. Nearest-neighbour pairing joined marks of neighbouring pairs (245 apart instead of 288) -> prefer the next INSERT in file order. `--cells-at` does not check for free space: verify first (a row was drawn over existing bar details). PowerShell 5.1: `Set-Content -Encoding UTF8` adds a BOM (breaks python source), and `&&` is invalid - use Python for file edits.
+
+- (2026-10-21) Colour work: change the LAYER colour, not entity overrides, when the user says 'organize the layer colours'; after he saves, diff layer table + entity colours against my last snapshot to read his intent (that is how the table above was learned).
+
+- (2026-10-21) Clouds: 'what is inside a cloud' = bbox overlap, not entity start points (stirrups inside the cloud were missed by a start-point test). INSERT bbox via ezdxf.bbox.extents (insert point can be far away: o.k block inserted at -205343). Dot recognition must not assume one dot width. PowerShell: python source with Hebrew paths needs UTF-8 WITHOUT BOM (use Set-Content -Encoding utf8 for scripts, [IO.File]::WriteAllText with UTF8Encoding(false) for .py edited by regex).
+
+- (2026-10-21) Learning from the user's hand edit: diff against MY last snapshot with arrays virtually exploded (INSERT *U -> virtual_entities, nested), compare dots as centre sets, everything else by (type, layer, rounded geometry); ignore re-save noise (dim angle None vs 0). Reproduce his section with the changed generator on a COPY before touching the rest.
+
+- (2026-10-21) A 'size set in a red cloud' is usually a dimension the user moved: compare defpoint (base) / defpoint2 / defpoint3 of the clouded dim with its siblings (relative to the section origin); never read only the displayed text.
+
+- (2026-10-21) A 'template default' (D=25) is not evidence: the slab labels sit in S_M block ATTRIBS (not TEXT) - slab_labels() on TEXT never saw them. Marker matching: weight the beam-wise offset double or a marker of the next panel wins; validate against sections the user already accepted.
+
+- (2026-10-21) Verify COVERAGE at the end of every round: count hat inserts / 2 vs numbered pairs (a pair outside the distance window silently vanished for several rounds). A saved file identical to my last output = the user only re-saved: look for what I still owe (unnumbered marks, UNVERIFIED items) instead of asking.
+
+- **Patch scripts (2026-10-21):** a failed edit of the patch file (cp1255 decode error on Hebrew paths: open with encoding='utf-8') left the old script, and chaining `python patch.py` without --dry WROTE the file. Always make --dry the default or run dry and real in separate calls; the pre-write `.bak-*` snapshot saved it (restore with cp -p, verify size+mtime). The user re-saves mid-turn: re-read mtime/markup before the real write, and re-run the cloud scan afterwards. His clouds can be stale relative to my last patch: check current geometry before deciding a cloud is 'not done'.
+
+- **`sections_round.py --dry` is NOT read-only (2026-10-21):** step 1 (`star_orient.py --max-y 1e9`) re-orients and SAVES the file even with --dry (8 of 34 pairs flipped on sections_ramla.dxf, snapshot `.bak-star-orient-*`). Before using it on a file with nothing to do, run `star_plan.py` / `markup` read-only first, or restore the snapshot with `cp -p` after. TODO: make --dry skip the orient write.
+
+- **Absolute y after align / centre (2026-10-21):** `align_titles.py` / `center_sections.py` translate every section by its own dy, so beam-bottom constants (YB=196.8) no longer hold; use relative positions inside the section (column dot order, KONTUR faces) and recompute levels from the file. Dots may be associative ARRAY INSERTs (anonymous `*U` blocks): read them with `INSERT.virtual_entities()`, explode only what changes, re-run `bar_arrays.py` afterwards (PowerShell, not git-bash).
+
+- Patching a .py file with a heredoc in bash: '' / '\d' in a normal (non-raw) string become a backspace / double backslash (a regex silently never matched). Write patch scripts to a file with the Write tool, use raw strings, then grep the target for .
+- SIVAN/Hebrew text on plans is stored REVERSED, digits included: raw '08=D' reads D=80. Parse both 'D=nn' and reversed 'nn=D' (reverse the digits).
+- Sheet detail that looks 'wrong' vs the true view (slab side of a free edge) may be deliberate: the user draws edge details in one orientation; do not mirror unless he asks.
+
+- A 'convenient' fallback that fills a missing number (plan-wide D=80 note) re-breaks a rule the user already taught (parametric H, memory feedback-default-solid-slab-param-h). Before adding a default, grep the memory/conventions for 'default' / 'never guess'.
+- `LB.clear_cell` does not delete LEADER entities: --replace left arrow leaders of the old detail in the cell (found by render).
+
+- Slab thickness lives in TWO places: `D=nn` texts and the S_M level-marker blocks (text inside the block, found by `slab_markers`). Search both before concluding 'no thickness'. Classify what the cut crosses by LAYER (93_KORA beam, 8_KIR wall, 9_KONTUR edge) before choosing a recipe.
+
+- Re-drawing a cell with --replace leaves ANY entity type the cleaner does not know (INSERT dots of another recipe, LEADERs): the new section then carries a ghost second set of bars. After a replace: `cell_dupes.py` + render; when adding a new entity type to a recipe, add it to `clear_cell` in the same edit.
+
+- (2026-10-22) A TRAILING `# comment` on a one-line `a = ...; b = ...` swallows the rest of the line (NameError later): put the comment at the end of the whole line. PowerShell 5.1 `Set-Content -Encoding utf8` writes a BOM (breaks json.load and python source): use `[IO.File]::WriteAllText(..., UTF8Encoding($false))` or json 'utf-8-sig'; PowerShell hashtable keys are case-insensitive (`Dl` vs `dl` clash): build JSON specs in Python. A PermissionError on save = the DXF is open in AutoCAD: nothing was written, ask the user to save + close, never write a copy.
+- (2026-10-22) A parser that returns None silently (level regexes) makes a whole feature a no-op with no warning: after changing a reader, print how many values it found (111 of 121 markers had a level) and compare against the raw attribs of 2-3 elements.
+
+- (2026-10-22) ezdxf add_linear_dim(location=...): with p1 ABOVE p2 the text lands on the wrong side of a vertical dim line - always give the lower point first. redraw_general.py reads the origin from the section's own beam-bottom line, so a 'dx' nudge ACCUMULATES on every re-run: pass dx=0 once the section has been nudged. After a re-run of finishing passes check the margins of every frame (min left/right/top/bottom of entity bboxes), not only the render. A user's hand-dimensioned section is the spec: diff its dims (defpoints + text_midpoint) against the generator's output on a scratch copy before applying to the rest. Run a one-off p.py that appends to skill files only ONCE (a failed test earlier in the same command line does not stop the next command: duplicates).
+
+- Moving a leader note (2026-10-23): move text + shelf + EVERY fork line end together; find the joint by which polyline end touches LINEs (it may be the last point, not the first), exclude the note's own forks from the obstacle list (else a spurious 'conflict' moves it), and assert shelf-end / fork-end contact before saving. A one-sided move silently slants the shelf and cuts the leader. Mirrored (RTL) text boxes extend LEFT of the insert point. Always snapshot before and keep a per-handle restore path.
+
+- Learning from his hand edits (2026-10-23): to isolate what HE changed, snapshot my own output right after every write (`.bak-<tag>` is the state BEFORE the write, so it does not help); otherwise a handle diff mixes his edits with my moves. Cheap fix: also write `FILE.mine-<tag>` after saving, or diff against the pre-write snapshot and subtract my logged handles.
+- Cloning a template entity (bar dots): compute the offset from the TEMPLATE's position, not from a moving loop cursor - all clones stacked on one spot (restored from the snapshot, caught by re-running the idempotence check: a re-run must report 0). Always run a recipe twice; the second run must change nothing.
+- Never `python -` / REPL without a script in a tool call: it hangs waiting on stdin; write the script to a file (also for non-ASCII source: pass encoding='utf-8').
+
+- Text <-> shelf attachment (2026-10-23): attach each text to ONE shelf (best x-overlap, base 0..3.6 above it); two notes at the same height glued to one shelf are moved as a group and detach from their own shelf. Generator notes can hang past their shelf end (accepted when touching). Rotated (90) labels give false 'overlaps' in a box-based check (the user's own 25B1B16/18 do too).
+- Heavy renders: write a montage script (XREF block lines + host entities, arrays exploded via virtual_entities) instead of dxf_inspect png (minutes on a 19 MB file).
+
+- (2026-10-23) A layer a recipe creates itself gets a default colour (7). Always take the colour from the office's code (voids green ACI 3, rebar blue ACI 4, text green...) - check colours after the first write, do not leave it to the user to find.
