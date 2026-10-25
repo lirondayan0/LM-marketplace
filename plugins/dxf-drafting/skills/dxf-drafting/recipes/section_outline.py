@@ -1,7 +1,7 @@
 """Recipe: draw the cut OUTLINE + title of an edge-beam-with-slab section (L shape) in a target box. Usage:
   python section_outline.py FILE.dxf 1-1 --box X0 Y0 W H --beam 30 65 --slab 20 [--left 0] [--right 59] [--dry] [-o OUT] [--png OUT]
 Slab(s) on the right (default 59 shown) and/or left of the beam, top flush with the beam top (as ground-floor 1-1 in the examples). Then run dim_section.py (use --near X Y
-because the example sheet already has the same section numbers). Rules: ../conventions/section-drawings.md."""
+because the example sheet already has the same section numbers). Rules: ../conventions/sections-drawing.md."""
 import argparse, os, shutil, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'scripts'))
 from dxflib import *

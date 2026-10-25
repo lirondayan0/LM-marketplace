@@ -1,4 +1,4 @@
-"""Recipe: ROW-BASED DIMENSION LINES for a slab plan - the user's example rules of 2026-10-13 (conventions/plan-dimensions.md RULES 1-4).
+"""Recipe: ROW-BASED DIMENSION LINES for a slab plan - the user's example rules of 2026-10-13 (conventions/plan-dimensions.md principles 3-6).
   python plan_rows.py FILE --box X0 Y0 X1 Y1 [--dry] [--expect MTIME] [-v] [-o OUT]
  1. every line is ONE continuous chain from the beginning to the end of the plan (outer face of the perimeter wall to the other): items = every face the line crosses;
  2. a line states the elements of ONE SIDE only: its extension lines reach elements on the chosen side (distance <= EXT_MAX = 100 cm = 1 m, user 2026-10-14; was 250), never both sides; the line runs just outside the row it serves;

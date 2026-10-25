@@ -1,6 +1,6 @@
 """Recipe: continuous dimension CHAINS (X rows and Y columns) along the piers/walls of a plan (user red-cloud examples in ramla_base.dxf, 2026-10-07).
   python plan_chains.py FILE [--axis x|y|both] [--dry] [-v] [-o OUT] [--force-existing]
-Rules (user examples; see conventions/section-drawings.md, Plan dimensions):
+Rules (user examples; see conventions/plan-dimensions.md section 7):
  - ROW (X dims): ONE horizontal chain per pier row, dim line 101.09 below the piers bottom edge. COLUMN (Y dims): one vertical chain per pier column, dim line 50 right of the right faces.
    Layer 36_MIDA_CLALI, style dim_100. Chain = every element width + every clear span between neighbours, no overall dim.
  - Elements = axis-aligned small rects of 82_KIR_OLE (pier / wall leg, min side <=45, max <=210; ext lines to their near edge), walls the line crosses (slices of the

@@ -1,0 +1,1010 @@
+{
+"0": {
+"color": 7,
+"linetype": "Continuous"
+},
+"0001_LINE_HELP": {
+"color": 1,
+"linetype": "Continuous"
+},
+"00_BLOKIM": {
+"color": 221,
+"linetype": "DASHED"
+},
+"00_BLOKIM_GALERIA": {
+"color": 2,
+"linetype": "DASHED"
+},
+"00_BLOKIM_KOMA_0": {
+"color": 6,
+"linetype": "DASHED"
+},
+"00_BLOKIM_KOMA_0.5": {
+"color": 2,
+"linetype": "DASHED"
+},
+"00_BLOKIM_KOMA_1": {
+"color": 253,
+"linetype": "DASHED"
+},
+"00_BLOKIM_KOMA_2": {
+"color": 2,
+"linetype": "DASHED"
+},
+"00_BLOKIM_KOMA_3": {
+"color": 11,
+"linetype": "DASHED"
+},
+"00_BLOKIM_KOMA_4": {
+"color": 2,
+"linetype": "DASHED"
+},
+"00_BLOKIM_KOMA_5": {
+"color": 11,
+"linetype": "DASHED"
+},
+"00_BLOKIM_KOMA_ILIONA": {
+"color": 2,
+"linetype": "DASHED"
+},
+"00_BLOKIM_KOMA_TIPUSIT": {
+"color": 221,
+"linetype": "DASHED"
+},
+"00_BLOKIM_MARTEF -1": {
+"color": 11,
+"linetype": "DASHED"
+},
+"00_BLOKIM_MARTEF -2": {
+"color": 133,
+"linetype": "DASHED"
+},
+"00_BLOKIM_MARTEF -3": {
+"color": 2,
+"linetype": "DASHED"
+},
+"00_HANAET": {
+"color": 2,
+"linetype": "DASHED"
+},
+"01_FETA": {
+"color": 3,
+"linetype": "Continuous"
+},
+"0_LUHADIM": {
+"color": 2,
+"linetype": "Continuous"
+},
+"0_LUHADIM_HATAH": {
+"color": 11,
+"linetype": "DASHED"
+},
+"0_LUHADIM_HEZ": {
+"color": 3,
+"linetype": "Continuous"
+},
+"0_LUHADIM_SHEN": {
+"color": 11,
+"linetype": "DASHED"
+},
+"0_LUHADIM_SHEN_TEXT": {
+"color": 3,
+"linetype": "Continuous"
+},
+"0_LUHADIM_TEXT": {
+"color": 3,
+"linetype": "Continuous"
+},
+"0_PLATOT": {
+"color": 2,
+"linetype": "Continuous"
+},
+"100D": {
+"color": 2,
+"linetype": "Continuous"
+},
+"10_PLADA": {
+"color": 3,
+"linetype": "Continuous"
+},
+"10_PLADA_BOLD": {
+"color": 4,
+"linetype": "Continuous"
+},
+"10_PLADA_DASHED": {
+"color": 2,
+"linetype": "DASHED"
+},
+"10_PLADA_DIMENSION": {
+"color": 2,
+"linetype": "Continuous"
+},
+"10_PLADA_HATAH": {
+"color": 3,
+"linetype": "Continuous"
+},
+"10_PLADA_HATAH_DASHED": {
+"color": 11,
+"linetype": "DASHED"
+},
+"10_PLADA_HATAH_ZIR": {
+"color": 6,
+"linetype": "DASHDOT"
+},
+"10_PLADA_KONTUR_DASHED": {
+"color": 11,
+"linetype": "DASHED"
+},
+"10_PLADA_TEXT": {
+"color": 3,
+"linetype": "Continuous"
+},
+"10_PLADA_ZET": {
+"color": 6,
+"linetype": "Continuous"
+},
+"10_PLADA_ZIUN": {
+"color": 4,
+"linetype": "Continuous"
+},
+"10_PLADA_steel": {
+"color": 5,
+"linetype": "Continuous"
+},
+"11_1_KAV_BINYAN": {
+"color": 1,
+"linetype": "DASHED"
+},
+"11_1_KAV_BINYAN_MIDA": {
+"color": 1,
+"linetype": "DASHED"
+},
+"11_GVUL_MIGRASH": {
+"color": 5,
+"linetype": "DASHED"
+},
+"11_GVUL_MIGRASH_TEXT": {
+"color": 5,
+"linetype": "Continuous"
+},
+"12_HAFIRA_LINE": {
+"color": 102,
+"linetype": "Continuous"
+},
+"12_HAFIRA_MIDA": {
+"color": 9,
+"linetype": "Continuous"
+},
+"12_HAFIRA_SYMBOL": {
+"color": 7,
+"linetype": "Continuous"
+},
+"12_HAFIRA_TEXT": {
+"color": 181,
+"linetype": "Continuous"
+},
+"12_SIM_HAFIRA": {
+"color": 7,
+"linetype": "Continuous"
+},
+"133_ZIR": {
+"color": 7,
+"linetype": "DASHDOT"
+},
+"13_1_OMASIM_TEXT": {
+"color": 61,
+"linetype": "Continuous"
+},
+"13_2_OMASIM_ZET": {
+"color": 61,
+"linetype": "HIDDEN"
+},
+"13_CIR": {
+"color": 7,
+"linetype": "DASHDOT"
+},
+"14_1_CLUNAS_DIPUN": {
+"color": 4,
+"linetype": "Continuous"
+},
+"14_1_CLUNAS_DIPUN_OLE": {
+"color": 181,
+"linetype": "DASHED"
+},
+"14_1_CLUNAS_DIPUN_OLE_HATSH": {
+"color": 1,
+"linetype": "Continuous"
+},
+"14_1_CLUNAS_DIPUN_TEXT": {
+"color": 3,
+"linetype": "Continuous"
+},
+"14_1_CLUNAS_DIPUN_ZET": {
+"color": 6,
+"linetype": "Continuous"
+},
+"14_CLUNAS": {
+"color": 4,
+"linetype": "Continuous"
+},
+"14_CLUNAS_BISUS": {
+"color": 4,
+"linetype": "Continuous"
+},
+"14_CLUNAS_BISUS_OLE": {
+"color": 181,
+"linetype": "DASHED"
+},
+"14_CLUNAS_BISUS_OLE_HATSH": {
+"color": 1,
+"linetype": "Continuous"
+},
+"14_CLUNAS_BISUS_TEXT": {
+"color": 3,
+"linetype": "Continuous"
+},
+"14_CLUNAS_BISUS_ZET": {
+"color": 6,
+"linetype": "Continuous"
+},
+"14_CLUNAS_DIMENSION": {
+"color": 43,
+"linetype": "Continuous"
+},
+"14_CLUNAS_HEIGHT": {
+"color": 104,
+"linetype": "Continuous"
+},
+"14_CLUNAS_ROSH": {
+"color": 104,
+"linetype": "Continuous"
+},
+"14_CLUNAS_ZET": {
+"color": 6,
+"linetype": "Continuous"
+},
+"15_DASHED": {
+"color": 11,
+"linetype": "DASHED"
+},
+"16_ZAMAG": {
+"color": 2,
+"linetype": "DASHED"
+},
+"17_MABAT": {
+"color": 6,
+"linetype": "Continuous"
+},
+"18_KONTUR_DAK": {
+"color": 2,
+"linetype": "DASHED"
+},
+"1910_ZET_ZIUN_ILION": {
+"color": 6,
+"linetype": "Continuous"
+},
+"1911_ZET_ZIUN_TAHTON": {
+"color": 6,
+"linetype": "Continuous"
+},
+"1912_ZET_ZIUN_T+I": {
+"color": 6,
+"linetype": "Continuous"
+},
+"1920_ZIUN_DOT_ILION": {
+"color": 4,
+"linetype": "Continuous"
+},
+"1921_ZIUN_DOT_TAHTON": {
+"color": 4,
+"linetype": "Continuous"
+},
+"1922_ZIUN_DOT_T+I": {
+"color": 4,
+"linetype": "Continuous"
+},
+"192_ZIR": {
+"color": 6,
+"linetype": "DASHDOT"
+},
+"1930_ZIUN_ILION": {
+"color": 30,
+"linetype": "Continuous"
+},
+"1931_ZIUN_TAHTON": {
+"color": 30,
+"linetype": "Continuous"
+},
+"1932_ZIUN_T+I": {
+"color": 30,
+"linetype": "Continuous"
+},
+"1933_RASHAT_ILI0NA": {
+"color": 4,
+"linetype": "Continuous"
+},
+"1934_RASHAT_TAHTONA": {
+"color": 4,
+"linetype": "Continuous"
+},
+"1935_RASHAT_T+I(MMD-MMM)": {
+"color": 4,
+"linetype": "Continuous"
+},
+"1936_RASHAT": {
+"color": 4,
+"linetype": "Continuous"
+},
+"193_ZIUN": {
+"color": 3,
+"linetype": "Continuous"
+},
+"193_ZIUN_TEXT": {
+"color": 3,
+"linetype": "Continuous"
+},
+"1943_X-RASHAT_ILI0NA": {
+"color": 4,
+"linetype": "Continuous"
+},
+"1943_Y-RASHAT_ILI0NA": {
+"color": 4,
+"linetype": "Continuous"
+},
+"1944_ Y_RASHAT_TAHTONA": {
+"color": 4,
+"linetype": "Continuous"
+},
+"1944_X_RASHAT_TAHTONA": {
+"color": 4,
+"linetype": "Continuous"
+},
+"19_RETUCH": {
+"color": 2,
+"linetype": "Continuous"
+},
+"1_AMUD": {
+"color": 31,
+"linetype": "Continuous"
+},
+"1_AMUD_KAYAM": {
+"color": 7,
+"linetype": "Continuous"
+},
+"1_AMUD_TEXT": {
+"color": 3,
+"linetype": "Continuous"
+},
+"1_KIR_KAYAM": {
+"color": 7,
+"linetype": "Continuous"
+},
+"1_PITUAH_LINE": {
+"color": 71,
+"linetype": "DASHED"
+},
+"1_PITUAH_LINE_1": {
+"color": 11,
+"linetype": "DASHED"
+},
+"1_PITUAH_MIFLAS": {
+"color": 71,
+"linetype": "DASHED"
+},
+"1_PITUAH_TEXT": {
+"color": 11,
+"linetype": "Continuous"
+},
+"1_ZET": {
+"color": 6,
+"linetype": "Continuous"
+},
+"200D": {
+"color": 1,
+"linetype": "Continuous"
+},
+"20_ZINIROT_MAMAD(M)": {
+"color": 3,
+"linetype": "Continuous"
+},
+"21_SIM": {
+"color": 6,
+"linetype": "Continuous"
+},
+"23_SIM": {
+"color": 3,
+"linetype": "Continuous"
+},
+"25-TEXT": {
+"color": 40,
+"linetype": "Continuous"
+},
+"25_SIM": {
+"color": 2,
+"linetype": "Continuous"
+},
+"25_SIM_TEXT": {
+"color": 3,
+"linetype": "Continuous"
+},
+"26_KAV_TEFER": {
+"color": 6,
+"linetype": "DASHED"
+},
+"27_DIRECTION": {
+"color": 7,
+"linetype": "Continuous"
+},
+"28_1_OGEN": {
+"color": 3,
+"linetype": "Continuous"
+},
+"28_OGANIM": {
+"color": 6,
+"linetype": "DASHED"
+},
+"28_OGANIM_MIDA": {
+"color": 2,
+"linetype": "Continuous"
+},
+"28_OGANIM_TEXT": {
+"color": 3,
+"linetype": "Continuous"
+},
+"28_OGANIM_ZET": {
+"color": 6,
+"linetype": "Continuous"
+},
+"29_ESOD": {
+"color": 3,
+"linetype": "Continuous"
+},
+"2_AMUD_NUMBER": {
+"color": 7,
+"linetype": "Continuous"
+},
+"2_MIDA_SLARI": {
+"color": 2,
+"linetype": "Continuous"
+},
+"2_SLARI_TEXT": {
+"color": 3,
+"linetype": "Continuous"
+},
+"2_ZET(to 2_TEXT_SLARI)": {
+"color": 6,
+"linetype": "Continuous"
+},
+"36_MIDA_CLALI": {
+"color": 2,
+"linetype": "Continuous"
+},
+"36_MIDA_SLAB_STEEL": {
+"color": 6,
+"linetype": "Continuous"
+},
+"3_CLUNAS_NUMBER": {
+"color": 7,
+"linetype": "Continuous"
+},
+"4": {
+"color": 3,
+"linetype": "Continuous"
+},
+"40_WALL_KAYAM": {
+"color": 9,
+"linetype": "Continuous"
+},
+"4111_TEXT_RASHAT_ILIONA": {
+"color": 3,
+"linetype": "Continuous"
+},
+"4112_TEXT_RASHAT_TAXTONA": {
+"color": 3,
+"linetype": "Continuous"
+},
+"4113_TEXT_RASHAT_I+T": {
+"color": 3,
+"linetype": "Continuous"
+},
+"4114_TEXT_RASHAT": {
+"color": 3,
+"linetype": "Continuous"
+},
+"411_TEXT_100": {
+"color": 3,
+"linetype": "Continuous"
+},
+"41_TEXT": {
+"color": 4,
+"linetype": "Continuous"
+},
+"4211_TEXT_ZIUN_ILION": {
+"color": 3,
+"linetype": "Continuous"
+},
+"4212_TEXT_ZIUN_TAHTON": {
+"color": 3,
+"linetype": "Continuous"
+},
+"4213_TEXT_ZIUN_T+I": {
+"color": 3,
+"linetype": "Continuous"
+},
+"42_TEXT": {
+"color": 30,
+"linetype": "Continuous"
+},
+"43_TEXT_AMUD": {
+"color": 3,
+"linetype": "Continuous"
+},
+"44_TEXT_ZIUN": {
+"color": 3,
+"linetype": "Continuous"
+},
+"45_TEXT_KORA": {
+"color": 3,
+"linetype": "Continuous"
+},
+"4_TEXT": {
+"color": 3,
+"linetype": "Continuous"
+},
+"4_TEXT_AMUD": {
+"color": 3,
+"linetype": "Continuous"
+},
+"4_TEXT_TAVLA": {
+"color": 3,
+"linetype": "Continuous"
+},
+"53_HATAH_MIDA": {
+"color": 2,
+"linetype": "Continuous"
+},
+"54_HATAH_KONTUR": {
+"color": 3,
+"linetype": "Continuous"
+},
+"54_HATAH_TEXT": {
+"color": 3,
+"linetype": "Continuous"
+},
+"54_HATAH_ZET": {
+"color": 6,
+"linetype": "Continuous"
+},
+"56_HATAH_ZET": {
+"color": 6,
+"linetype": "Continuous"
+},
+"57_HATAH_DASHED": {
+"color": 11,
+"linetype": "DASHED"
+},
+"57_HATAH_ZIUN": {
+"color": 4,
+"linetype": "Continuous"
+},
+"58_HATAH_SIM": {
+"color": 3,
+"linetype": "Continuous"
+},
+"59_HATAH_HATCH_KIR_OLE": {
+"color": 1,
+"linetype": "Continuous"
+},
+"5_HATAH _KONTUR": {
+"color": 3,
+"linetype": "Continuous"
+},
+"5_HATAH_DASHED": {
+"color": 11,
+"linetype": "DASHED"
+},
+"5_HATAX_KLUNAS": {
+"color": 4,
+"linetype": "Continuous"
+},
+"5_HATAX_ZIUN": {
+"color": 4,
+"linetype": "Continuous"
+},
+"5_ZET": {
+"color": 6,
+"linetype": "Continuous"
+},
+"60_HATCH_ADAMA": {
+"color": 1,
+"linetype": "Continuous"
+},
+"62_HATCH_AMUD_OLE": {
+"color": 1,
+"linetype": "Continuous"
+},
+"63_HATCH_KIR_HARISA": {
+"color": 2,
+"linetype": "Continuous"
+},
+"63_HATCH_KIR_OLE": {
+"color": 1,
+"linetype": "Continuous"
+},
+"63_HATCH_KIR_OLE_No Constr": {
+"color": 2,
+"linetype": "Continuous"
+},
+"63_HATSH_KIR_OLE": {
+"color": 1,
+"linetype": "Continuous"
+},
+"64_1_HATCH_KAYAM": {
+"color": 1,
+"linetype": "Continuous"
+},
+"65_HATCH_SECTION": {
+"color": 1,
+"linetype": "Continuous"
+},
+"6_HATCH": {
+"color": 1,
+"linetype": "Continuous"
+},
+"71_FRAME": {
+"color": 2,
+"linetype": "Continuous"
+},
+"71_FRAME_STR": {
+"color": 2,
+"linetype": "Continuous"
+},
+"71_FRAME_TEXT": {
+"color": 3,
+"linetype": "Continuous"
+},
+"72_FRAME_WIN": {
+"color": 7,
+"linetype": "Continuous"
+},
+"7_MISGERET": {
+"color": 30,
+"linetype": "Continuous"
+},
+"7_MISGERET_STR": {
+"color": 30,
+"linetype": "Continuous"
+},
+"7_RAFSODA": {
+"color": 162,
+"linetype": "Continuous"
+},
+"7_RAFSODA_MIDA": {
+"color": 162,
+"linetype": "Continuous"
+},
+"7_RAFSODA_TEXT": {
+"color": 162,
+"linetype": "Continuous"
+},
+"82A_AMUD_OLE": {
+"color": 181,
+"linetype": "DASHED"
+},
+"82_WALL_OLE": {
+"color": 181,
+"linetype": "DASHED"
+},
+"82_WALL_OLE_No Constr": {
+"color": 6,
+"linetype": "DASHED"
+},
+"83_1_KIR_KAYAM": {
+"color": 255,
+"linetype": "DASHED"
+},
+"83_1_WALL_KAYAM": {
+"color": 255,
+"linetype": "DASHED"
+},
+"83_2_KIR_HARISA": {
+"color": 2,
+"linetype": "DASHED"
+},
+"83_2_WALL_HARISA": {
+"color": 2,
+"linetype": "DASHED"
+},
+"83_WALL_OLE_No Constr": {
+"color": 6,
+"linetype": "DASHED"
+},
+"8A_AMUD": {
+"color": 4,
+"linetype": "Continuous"
+},
+"8_ESOD_KAYAM_DASHED": {
+"color": 11,
+"linetype": "DASHED"
+},
+"8_KIR": {
+"color": 4,
+"linetype": "Continuous"
+},
+"92_KORA_OLA": {
+"color": 2,
+"linetype": "HIDDEN"
+},
+"93_KORA": {
+"color": 102,
+"linetype": "Continuous"
+},
+"94_RIZPA_KFULA_DASHED": {
+"color": 11,
+"linetype": "DASHED"
+},
+"9_1_KONTUR_KAYAM": {
+"color": 1,
+"linetype": "Continuous"
+},
+"9_KONTUR": {
+"color": 3,
+"linetype": "Continuous"
+},
+"9_KONTUR _MARTEF-1": {
+"color": 6,
+"linetype": "Continuous"
+},
+"9_KONTYR_CON_KALA": {
+"color": 2,
+"linetype": "Continuous"
+},
+"ARROW_SLOPE": {
+"color": 2,
+"linetype": "Continuous"
+},
+"AXIS": {
+"color": 5,
+"linetype": "DASHDOT"
+},
+"Att": {
+"color": 3,
+"linetype": "Continuous"
+},
+"BLOK 1": {
+"color": 8,
+"linetype": "DASHED"
+},
+"BLOKI": {
+"color": 7,
+"linetype": "DASHED"
+},
+"C-PETACH": {
+"color": 8,
+"linetype": "Continuous"
+},
+"DASHED": {
+"color": 9,
+"linetype": "DASHED"
+},
+"DASHED_MADREGOT": {
+"color": 9,
+"linetype": "DASHED"
+},
+"Defpoints": {
+"color": 7,
+"linetype": "Continuous"
+},
+"Dim 1-100": {
+"color": 4,
+"linetype": "Continuous"
+},
+"GRID": {
+"color": 9,
+"linetype": "DASHDOTX2"
+},
+"GRID_TEXT": {
+"color": 9,
+"linetype": "Continuous"
+},
+"GROUNDING_STRIP": {
+"color": 2,
+"linetype": "Continuous"
+},
+"HANAET -1": {
+"color": 253,
+"linetype": "DASHED"
+},
+"HANAET -2": {
+"color": 11,
+"linetype": "DASHED"
+},
+"HANAET -3": {
+"color": 253,
+"linetype": "DASHED"
+},
+"HANAET 0": {
+"color": 2,
+"linetype": "DASHED"
+},
+"HANAET 1": {
+"color": 11,
+"linetype": "DASHED"
+},
+"HANAET 2": {
+"color": 2,
+"linetype": "DASHED"
+},
+"HANAET_-2": {
+"color": 2,
+"linetype": "DASHED"
+},
+"HATCH_KIR KAYAM_UP": {
+"color": 1,
+"linetype": "Continuous"
+},
+"HOLD_LINE": {
+"color": 151,
+"linetype": "HIDDEN"
+},
+"HOLD_TEXT": {
+"color": 2,
+"linetype": "Continuous"
+},
+"KAV_BINYAN": {
+"color": 240,
+"linetype": "HIDDEN"
+},
+"KAV_KOMA": {
+"color": 5,
+"linetype": "Continuous"
+},
+"KAV_MIGRASH": {
+"color": 5,
+"linetype": "Continuous"
+},
+"KAV_TEFER": {
+"color": 151,
+"linetype": "HIDDEN"
+},
+"KAYAM": {
+"color": 7,
+"linetype": "DASHED"
+},
+"KIR KAYAM_DOWN": {
+"color": 151,
+"linetype": "Continuous"
+},
+"KIR KAYAM_DOWN_HATCH": {
+"color": 151,
+"linetype": "Continuous"
+},
+"KIR KAYAM_UP_HATCH": {
+"color": 1,
+"linetype": "Continuous"
+},
+"KORA KAYEMET_DOWN": {
+"color": 42,
+"linetype": "Continuous"
+},
+"KORA _DOWN_NEW": {
+"color": 3,
+"linetype": "Continuous"
+},
+"Line-Hidden": {
+"color": 2,
+"linetype": "HIDDEN2"
+},
+"MISC": {
+"color": 2,
+"linetype": "HIDDEN"
+},
+"MISGERET": {
+"color": 5,
+"linetype": "Continuous"
+},
+"MISGERET_1": {
+"color": 2,
+"linetype": "Continuous"
+},
+"Panel": {
+"color": 4,
+"linetype": "Continuous"
+},
+"S-BEAM-UP": {
+"color": 2,
+"linetype": "HIDDEN"
+},
+"S-HOLE": {
+"color": 3,
+"linetype": "Continuous"
+},
+"SHINUIM-TIKUNIM": {
+"color": 7,
+"linetype": "Continuous"
+},
+"T": {
+"color": 3,
+"linetype": "Continuous"
+},
+"TEXT": {
+"color": 6,
+"linetype": "Continuous"
+},
+"TEXTL": {
+"color": 4,
+"linetype": "Continuous"
+},
+"TEXTS": {
+"color": 3,
+"linetype": "Continuous"
+},
+"TEXT_": {
+"color": 4,
+"linetype": "Continuous"
+},
+"TNUA": {
+"color": 11,
+"linetype": "DASHED"
+},
+"TNUA_": {
+"color": 2,
+"linetype": "DASHED"
+},
+"ZIR": {
+"color": 6,
+"linetype": "DASHDOT"
+},
+"s-grid": {
+"color": 253,
+"linetype": "DASHDOT2"
+},
+"s-grid_dimention": {
+"color": 124,
+"linetype": "DASHDOT2"
+},
+"s-grid_text": {
+"color": 253,
+"linetype": "Continuous"
+},
+"s_grid_1": {
+"color": 124,
+"linetype": "DASHDOT2"
+},
+"s_grid_2": {
+"color": 253,
+"linetype": "DASHDOT2"
+},
+"snog": {
+"color": 3,
+"linetype": "Continuous"
+},
+"קו רכס": {
+"color": 151,
+"linetype": "HIDDEN"
+},
+"72_MISGERET_WIN": {
+"color": 7,
+"linetype": "Continuous"
+},
+"10": {
+"color": 5,
+"linetype": "Continuous"
+},
+"56_HATAH_ZET_NO_POOL": {
+"color": 6,
+"linetype": "Continuous"
+},
+"51_HATAH_DASHED": {
+"color": 11,
+"linetype": "DASHED"
+},
+"2000_DOT_HELP_LINE": {
+"color": 254,
+"linetype": "DASHDOT"
+},
+"56_STEEL_ZET": {
+"color": 6,
+"linetype": "Continuous"
+}
+}

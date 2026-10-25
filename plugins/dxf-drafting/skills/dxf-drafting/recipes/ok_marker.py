@@ -1,4 +1,4 @@
-"""'OK per plan' level marker on every generated section (user 2026-10-21, brenda_karka: red cloud on the `o.k block` of section 1-1 = o.k mark + 'לפי תכנית' (SIVAN) over the slab top, "add this to all the sections").
+"""'OK per plan' level marker (user 2026-10-21, brenda_karka: red cloud on the `o.k block` of section 1-1 = o.k mark + 'לפי תכנית' (SIVAN) over the slab top, first "add this to all the sections", then he deleted it from 1-1 -> written ONCE per sheet with `--once CELL`, which sections_round uses; conventions/sections-workflow.md section 5, confirmed by him 2026-10-24).
 The marker is the user's own block `o.k block` (layer 57_HATAH_ZIUN; MH triangle + 'o.k' DIM text + 'kph ,fbh,' SIVAN mirrored). Placement learned from his section 1-1: block bbox min = beam LEFT FACE + 1.9 in x, slab TOP in y
 (i.e. the same offset from the beam's left face / top line in every section; the slab top is flush with the beam top). The beam left face = the second-smallest start x of the 9_KONTUR top lines (the right-hand slab piece starts at the face).
 Reference = an existing `o.k block` INSERT in the cells (its offset is measured, not assumed); without one the block definition is used with the +1.9 / 0 offset. Idempotent: a cell that already holds the marker is skipped. `--once CELL` (user 2026-10-21: written ONCE on the sheet): keep / create it in that cell only and delete the duplicates.
@@ -38,9 +38,10 @@ def add_markers(doc, x0, y0, n, w=400.0, h=600.0, once=None):
         for k, (cx, cy) in enumerate(cells):
             if cx <= b.extmin.x <= cx + w and cy <= b.extmin.y <= cy + h: have[k] = (e, b)
     ref = next(iter(have.values()), None); geo = {k: cell_geometry(doc, cx, cy, w, h) for k, (cx, cy) in enumerate(cells)}
-    if ref:                                                  # measured offset of the user's marker (bbox min) from the beam face / top
-        k0 = next(iter(have)); gx, gy = geo[k0]; e0, b0 = ref; off = (b0.extmin.x - gx, b0.extmin.y - gy)
-    else: off = (DX0, 0.0)
+    k0 = next((k for k in have if geo[k]), None)             # a reference marker only counts in a cell that has an outline (app run 2026-10-23: marker in an empty cell -> TypeError)
+    if ref and k0 is not None:                               # measured offset of the user's marker (bbox min) from the beam face / top
+        gx, gy = geo[k0]; e0, b0 = have[k0]; ref = have[k0]; off = (b0.extmin.x - gx, b0.extmin.y - gy)
+    else: ref = None; off = (DX0, 0.0)
     if once:                                           # user 2026-10-21: 'OK per plan' is written ONCE on the sheet: keep / create it in cell `once` (1-based), delete the others
         for k, (e, b) in list(have.items()):
             if k != once - 1: msp.delete_entity(e); msgs.append(f'cell {k + 1}: duplicate o.k marker removed'); del have[k]

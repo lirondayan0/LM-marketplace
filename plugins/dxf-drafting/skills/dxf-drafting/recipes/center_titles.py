@@ -18,6 +18,18 @@ def cells(doc, min_y=None, max_y=None):
         out += [(b.extmin.x + 400 * k, b.extmin.y, b.extmax.y) for k in range(round(b.size.x / 400))]
     return out
 
+def scale_x(title, scale, cx):
+    """insert x of the `1:25` text so that its visible centre = the visible centre of the title (shx_width extents); falls back to the old fixed offset"""
+    try:
+        from shx_width import text_extent
+        tt = title.dxf; raw = tt.text.replace('%%U', '')
+        a, b = text_extent(tt.style, raw, tt.insert.x, tt.height, tt.get('width', 1.0), bool(tt.get('text_generation_flag', 0) & 2))
+        sd = scale.dxf; sa, sb = text_extent(sd.style, sd.text, 0.0, sd.height, sd.get('width', 1.0))
+        return (a + b) / 2 - (sa + sb) / 2
+    except Exception as ex:
+        print('WARNING scale text not centred under the title:', repr(ex)); return cx + SCALE_DX
+
+
 def center_titles(doc, min_y=None, max_y=None, verbose=True):
     m = doc.modelspace(); rows = collections.defaultdict(list)
     for x0, y0, y1 in cells(doc, min_y, max_y):
@@ -32,7 +44,7 @@ def center_titles(doc, min_y=None, max_y=None, verbose=True):
         for cx, t, blk in lst:
             dy = yt - t.dxf.insert.y; t.dxf.insert = (cx + TITLE_DX, t.dxf.insert.y + dy, 0); n += 1
             for e in blk:
-                if e.dxf.text == '1:25': nx = cx + SCALE_DX
+                if e.dxf.text == '1:25': nx = scale_x(t, e, cx)      # user 2026-10-24 (his hand edit of 17-17): the scale sits CENTRED UNDER THE VISIBLE TITLE (two-digit titles are wider: the fixed cx-7.72 left it 7.5 off)
                 else: b = bbox.extents([e]); nx = e.dxf.insert.x + cx - (b.extmin.x + b.extmax.x) / 2
                 e.dxf.insert = (nx, e.dxf.insert.y + dy, 0)
     if verbose: print(f'titles centred: {n} cell(s) in {len(rows)} row(s)')

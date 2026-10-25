@@ -1,5 +1,5 @@
 """ONE COMMAND for "create the cross-sections" (user 2026-10-21: "next time I ask for a section plan, do it on your own").
-Runs the whole STANDING PROCEDURE (conventions/section-drawings.md) on the star markers inside claude_Kontur:
+Runs the whole STANDING PROCEDURE (conventions/sections-workflow.md section 4) on the star markers inside claude_Kontur:
   1 orient the pairs clockwise (star_orient, pairs = file-adjacent hats, --max-y 1e9)
   2 plan (star_plan, read-only): every pair must get a section - a pair that is not drawn is a hard WARNING
   3 find FREE SPACE: to the RIGHT of the plan beyond any other plan copy, 1000 clear of everything (then left / below / above only if impossible)
@@ -66,23 +66,37 @@ def main():
     if 'no unnumbered' in plan: sys.exit('nothing to do: no unnumbered S / SS / ST pairs inside claude_Kontur')
     nsec = len(re.findall(r'^section \d+-\d+:', plan, re.M)); undrawn = re.findall(r'^NOT DRAWN: (.*)$', plan, re.M)
     if undrawn: print('WARNING - pairs NOT drawn (read each cut by hand, the user wants every pair):', *undrawn, sep='\n  ')
+    if not nsec: sys.exit('ERROR: no marked cut could be read as a section - nothing is drawn (see the NOT DRAWN lines above). Is this an XREF file? (sections-xref.md)')
     rows = max(1, math.ceil(nsec / PER_ROW)); doc = ezdxf.readfile(f); place = find_place(doc, rows, kb or (min(b[0] for b in boxes(doc)), min(b[1] for b in boxes(doc)), max(b[2] for b in boxes(doc)), max(b[3] for b in boxes(doc))), a.side)
     if not place: sys.exit('no free space found beside the plan: choose a place with the user')
     x, y, side = place; print(f'3 free space: {side} of the plan, rows at ({x:.0f}, {y:.0f}), {rows} row(s) for {nsec} section(s)')
     if a.dry: return
-    print('4 draw'); print('\n'.join(run(os.path.join(HERE, 'star_plan.py'), f, *kont, '--max-y', '1e9', '--first', a.first, '--cells-at', x, y, '--draw').splitlines()[-14:]))
-    doc = ezdxf.readfile(f); bs = [b for b in boxes(doc) if b[0] >= x - 50 and b[2] <= x + ROW_W + 50 and b[1] >= y - rows * 1500 and b[3] <= y + rows * 1500 + ROW_H_GUESS]
-    box = (x - 50, min(b[1] for b in bs) - 20, ROW_W + 100, max(b[3] for b in bs) - min(b[1] for b in bs) + 40) if bs else (x - 50, y - 1500, ROW_W + 100, 3000 + ROW_H_GUESS)
+    print('4 draw'); drawn = run(os.path.join(HERE, 'star_plan.py'), f, *kont, '--max-y', '1e9', '--first', a.first, '--cells-at', x, y, '--draw').splitlines()
+    print('\n'.join(l for l in drawn if re.match(r'\d+-\d+ -> cell', l) or 'Error' in l or 'Traceback' in l or 'SECTIONS NOT DRAWN' in l or ' roller shutter ' in l or l.startswith(('template', 'marks renumbered', 'WARNING', 'SLOPED')))[-6000:])
+    if not any(l.startswith('marks renumbered') for l in drawn) or any('SECTIONS NOT DRAWN' in l for l in drawn):      # app run 2026-10-24: the draw crashed, the finish passes still ran and reported 'done' with NO sections in the file
+        sys.exit('ERROR: the sections were NOT drawn (see the lines above): the file is left as it was after the draw step, nothing else was run. Re-run; if it repeats, send the log.')
+    def sheet_box():
+        d_ = ezdxf.readfile(f); bs = [b for b in boxes(d_) if b[0] >= x - 50 and b[2] <= x + ROW_W + 900 and b[1] >= y - rows * 1500 and b[3] <= y + rows * 1500 + ROW_H_GUESS]
+        return (x - 50, min(b[1] for b in bs) - 20, max(ROW_W, max(b[2] for b in bs) - x) + 100, max(b[3] for b in bs) - min(b[1] for b in bs) + 40) if bs else (x - 50, y - 1500, ROW_W + 100, 3000 + ROW_H_GUESS)
+    box = sheet_box()
     print('5 finish passes on', [round(v) for v in box])
     for rec in ('sivan_text.py', 'leader_fit.py', 'rebar_color.py'): print(' ', rec, run(os.path.join(HERE, rec), f, '--box', *box).strip().splitlines()[-1:])
+    if os.path.exists(f + '.slopes.json'): print('  slope_label', run(os.path.join(HERE, 'slope_label.py'), f, '--json', f + '.slopes.json').strip().splitlines()[-4:])      # user 2026-10-22: a sloped slab along the cut gets a label (found from the plan note), after the SIVAN conversion
     print('  mid_note_fit', run(os.path.join(HERE, 'mid_note_fit.py'), f, '--box', *box).strip().splitlines()[-2:])      # user 2026-10-22: the middle-steel note overlaps nothing
-    # 'OK per plan' level marker (user 2026-10-21): the user's `o.k block` on EVERY section, from his reference marker in the file (or the block definition)
+    # 'OK per plan' level marker (user 2026-10-21, 9b): the user's `o.k block` written ONCE per sheet (second section), from his reference marker in the file (or the block definition)
     print('  ok_marker', run(os.path.join(HERE, 'ok_marker.py'), f, '--cells', x, box[1], nsec, '--cell-h', box[3], '--once', 2 if nsec > 1 else 1).strip().splitlines()[-1:])
     # BAR ARRAYS (user 2026-10-21: the reinforcement of the sections is drawn as associative ARRAYS) - LAST write step: AutoCAD (accoreconsole) saves the file
-    print('  align_row', run(os.path.join(HERE, 'align_row.py'), f, '--near', box[0] + 10, box[1] + 10).strip().splitlines()[:1])      # user 2026-10-22: all sections of a row hang from ONE title line
+    print('  fit_rows', run(os.path.join(HERE, 'fit_rows.py'), f, '--near', box[0] + 10, box[1] + 10).strip().splitlines()[:-2])      # user 2026-10-22: all sections of a row hang from ONE title line; user 2026-10-24: EVERY row (not only the lowest) holds its sections entirely, frames grow downward
+    box = sheet_box(); vbox_ = [box[0], box[1], box[0] + box[2], box[1] + box[3]]      # rows may have grown: the later passes need the new extent
     print('  cell_dupes', run(os.path.join(HERE, 'cell_dupes.py'), f, '--fix').strip().splitlines()[-2:])                                    # user 2026-10-22: no doubled reinforcement
     print('  text_overlap', run(os.path.join(HERE, 'text_overlap.py'), f, '--fix').strip().splitlines()[-1:])                            # user 2026-10-22: no overlapping text
+    # VISIBILITY GATE (2026-10-24: a plan with FROZEN 54 / 57 / 53 hid every title, bar and dimension; CLAYER on a frozen layer put the arrays on claude_Kontur) - BEFORE the arrays
+    vbox = vbox_
+    print('  section_visibility', run(os.path.join(HERE, 'section_visibility.py'), f, '--box', *vbox, '--fix').strip().splitlines()[-3:])
+    # SECTION INDICATOR LAYER (user 2026-10-25): the renumbered marks are section indicators -> layer 23_SIM (only inside the kontur); BEFORE the arrays (AutoCAD saves the file there)
+    print('  indicator_layer', run(os.path.join(HERE, 'section_indicator_layer.py'), f, *kont).strip().splitlines()[:1])
     import glob
+    print('  array_arrows', run(os.path.join(HERE, 'array_arrows.py'), f, '--box', box[0], box[1], box[0] + box[2], box[1] + box[3]).strip().splitlines()[-3:])      # user 2026-10-25: the last bar of an array sits ON its arrow, the spacing adjusts (BEFORE the arrays)
     if glob.glob(r'C:\Program Files\Autodesk\AutoCAD *\accoreconsole.exe'): print('  bar_arrays', run(os.path.join(HERE, 'bar_arrays.py'), f, '--box', box[0], box[1], box[0] + box[2], box[1] + box[3]).strip().splitlines()[-2:])
     else: print('  bar_arrays NOT RUN: accoreconsole.exe not found - tell the user, the dots are loose')
     # COVERAGE (user 2026-10-21: a 380-apart pair was silently missed): every hat pair inside the kontur must be numbered, WARNINGs of the recipes must reach the report
@@ -95,6 +109,8 @@ def main():
     unnum = [(round(h.dxf.insert.x), round(h.dxf.insert.y), h.attribs[0].dxf.text) for h in inside if not h.attribs[0].dxf.text.strip().isdigit()]
     print(f'  COVERAGE: {len(inside)} marks inside the kontur = {len(inside) // 2} pairs; unnumbered marks left: {unnum or 0}' + ('  <-- A PAIR WAS NOT DRAWN: pairing window / unreadable cut, fix before reporting' if unnum else ''))
     print('  CHECK the log above for WARNING lines (stirrup row beyond the table, section wider than its cell, pairs not drawn): they go into the report')
+    vis = run(os.path.join(HERE, 'section_visibility.py'), f, '--box', *vbox).strip().splitlines()      # read-only re-check AFTER AutoCAD saved the file
+    print('  VISIBILITY:', vis[0] if vis else '?', '' if vis and vis[0].endswith('problems: 0') else '  <-- SECTIONS ARE HIDDEN / MISPLACED: ' + ' | '.join(vis[1:]))
     d2 = ezdxf.readfile(f); aud = d2.audit(); print('6 verify: audit errors', len(aud.errors), '| numbered pairs left unnumbered:', len(re.findall(r'^NOT DRAWN', run(os.path.join(HERE, 'star_plan.py'), f, *kont, '--max-y', '1e9'), re.M)))
     png = a.png or os.path.join(os.path.dirname(f), 'sections_round_check.png')
     print(run(os.path.join(HERE, '..', 'scripts', 'dxf_inspect.py'), f, 'png', box[0], box[0] + box[2], box[1], box[1] + box[3], png).strip().splitlines()[-1:], 'render ->', png, '(READ IT: titles, notes in SIVAN, rebar light blue, nothing overlapping)')

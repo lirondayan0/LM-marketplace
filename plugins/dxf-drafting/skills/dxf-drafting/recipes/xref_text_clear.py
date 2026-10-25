@@ -11,6 +11,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'
 import ezdxf
 from ezdxf import bbox as BB
 from shx_width import text_extent
+from dxflib import xref_section_number
 
 NOTE_LAYER = '54_HATAH_TEXT'; ZET = '56_HATAH_ZET'; BAR_LAYERS = ('51_HATAH_DASHED', '57_HATAH_ZIUN'); STEP = 2.5; H_MAX = 50.0
 
@@ -54,8 +55,8 @@ def sbox(sg): return (min(sg[0][0], sg[1][0]), min(sg[0][1], sg[1][1]), max(sg[0
 def xref_sections(msp):
     secs = []
     for ins in msp.query('INSERT'):
-        m = re.search(r'Sec (\d+)-(\d+)$', ins.dxf.name)
-        if not m: continue
+        sec = xref_section_number(ins.dxf.name)
+        if sec is None: continue
         ents = []; explode(ins, ents); segs = []; txt = []
         for s in ents:
             t = s.dxftype()
@@ -66,7 +67,7 @@ def xref_sections(msp):
                 if b.has_data: txt.append((b.extmin.x, b.extmin.y, b.extmax.x, b.extmax.y))
         if not segs: continue
         xs = [v for a, b in segs for v in (a[0], b[0])]; ys = [v for a, b in segs for v in (a[1], b[1])]
-        secs.append(dict(n=int(m.group(1)), segs=segs, txt=txt, bb=(min(xs), min(ys), max(xs), max(ys))))
+        secs.append(dict(n=sec, segs=segs, txt=txt, bb=(min(xs), min(ys), max(xs), max(ys))))
     return secs
 
 def run(F, dry=False, gap=1.5, max_shift=60.0, vertical=False):
@@ -80,6 +81,7 @@ def run(F, dry=False, gap=1.5, max_shift=60.0, vertical=False):
     notes = []; host_lines = []; zet = []
     for e in msp:
         t = e.dxftype(); ly = e.dxf.layer
+        if e.has_xdata('DXFSKILL_TEMPLATE'): continue            # a copied hand-drawn reference section is final (scripts/ref_library.py)
         if t == 'TEXT' and ly == NOTE_LAYER and e.dxf.text.strip():
             b = tbox(e)
             if b: notes.append(dict(e=e, box=b, sec=owner((b[0] + b[2]) / 2, b[1])))

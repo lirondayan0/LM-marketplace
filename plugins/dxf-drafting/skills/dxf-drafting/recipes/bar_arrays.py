@@ -34,6 +34,8 @@ def dots_in(doc, box):
             p = [(a, b) for a, b, *_ in e.get_points()]
             if abs(p[0][1] - p[1][1]) < 1e-6 and abs(abs(p[0][0] - p[1][0]) - e.dxf.const_width) < 0.35 and x0 <= p[0][0] <= x1 and y0 <= p[0][1] <= y1:
                 out.append((e.dxf.handle, (p[0][0] + p[1][0]) / 2, p[0][1]))
+    for e in doc.modelspace().query('INSERT'):      # his block dots ('dot barzel' on the rebar layer: free-edge shutter column, slab step rows) are bar dots too (2026-10-25: they stayed loose in the round)
+        if e.dxf.layer == LAYER and e.dxf.name == 'dot barzel' and x0 <= e.dxf.insert.x <= x1 and y0 <= e.dxf.insert.y <= y1: out.append((e.dxf.handle, e.dxf.insert.x, e.dxf.insert.y))
     return out
 
 
@@ -93,7 +95,10 @@ def plan_arrays(dots):
 
 
 def script(arr, out_dxf, log):
-    L = ['(setvar "FILEDIA" 0)', '(setvar "CMDECHO" 0)', '(setvar "ARRAYASSOC" 1)', '(setvar "CLAYER" "%s")' % LAYER, '(setq f (open "%s" "w"))' % log]
+    # a FROZEN / off layer cannot become current: CLAYER silently fails and the arrays land on the previous layer (netivot 2026-10-24: claude_Kontur) -> thaw first, then PROVE it
+    L = ['(setvar "FILEDIA" 0)', '(setvar "CMDECHO" 0)', '(setvar "ARRAYASSOC" 1)', '(command "_.-LAYER" "_T" "%s" "_ON" "%s" "_U" "%s" "")' % (LAYER, LAYER, LAYER),
+         '(setvar "CLAYER" "%s")' % LAYER, '(setq f (open "%s" "w"))' % log,
+         '(write-line (strcat "CLAYER " (if (= (strcase (getvar "CLAYER")) "%s") "ok" (strcat "FAILED, current layer is " (getvar "CLAYER")))) f)' % LAYER]
     for k, h, n, tot, others in arr:
         L += ['(entdel (handent "%s"))' % o for o in others]
         a = '"_COL" %d %.4f "_R" 1 1.0 0.0' % (n, tot) if k == 'H' else '"_COL" 1 1.0 "_R" %d %.4f 0.0' % (n, tot / (n - 1))
@@ -109,6 +114,7 @@ def centres(doc, box):
             if e.dxftype() == 'LWPOLYLINE' and len(e) == 2 and 0.5 <= e.dxf.get('const_width', 0) <= 3.0:
                 p = [(a, b) for a, b, *_ in e.get_points()]
                 if abs(p[0][1] - p[1][1]) < 1e-6 and abs(abs(p[0][0] - p[1][0]) - e.dxf.const_width) < 0.35: out.append(((p[0][0] + p[1][0]) / 2, p[0][1]))
+            elif e.dxftype() == 'INSERT' and e.dxf.name == 'dot barzel': out.append((e.dxf.insert.x, e.dxf.insert.y))
             elif e.dxftype() == 'INSERT': walk(e.virtual_entities())
     walk([e for e in doc.modelspace() if e.dxf.layer == LAYER and e.dxftype() in ('LWPOLYLINE', 'INSERT')])
     return [c for c in out if box[0] <= c[0] <= box[2] and box[1] <= c[1] <= box[3]]
@@ -145,6 +151,7 @@ def main():
     diff = {k for k in set(ca) | set(cb) if ca[k] != cb[k]}
     ni = lambda d: sum(1 for e in d.modelspace().query('INSERT') if e.dxf.name.startswith('*U') and e.dxf.layer == LAYER)    # INSERTs, not bodies: deleted arrays leave orphan bodies
     assert ni(new) - ni(doc) == len(arr), 'array count'
+    assert not new.layers.get(LAYER).is_frozen() and new.layers.get(LAYER).is_on(), f'{LAYER} is hidden in the result'
     assert diff <= {('LWPOLYLINE', LAYER), ('INSERT', LAYER)}, diff
     assert same_dots(centres(doc, a.box), centres(new, a.box)), 'dot positions changed'
     shutil.copy2(a.file, f'{a.file}.bak-arrays-{time.strftime("%H%M%S")}'); shutil.copy2(out, a.file)

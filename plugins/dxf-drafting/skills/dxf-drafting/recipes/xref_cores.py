@@ -1,13 +1,14 @@
 ﻿"""Recipe: HOLLOW-CORE VOIDS in Revit XREF sections (user 2026-10-23, 3841-CON_test.dxf:
 'wherever the section cuts through a hollow-core slab, add the slab's voids to the section').
   python xref_cores.py FILE [--only 1,2,..] [--dry] [--write] [--expect MTIME]
-RULE (his convention, conventions/section-drawings.md 'Which drawing for a hollow-core slab' + 'obrounds'): the cut crosses the panels (they run PAST the beam / wall, no bearing) when the slab
+RULE (his convention, conventions/sections-reading.md section 1 + sections-drawing.md section 9): the cut crosses the panels (they run PAST the beam / wall, no bearing) when the slab
 meets the stem / wall face WITHOUT a ledge; a slab resting on a ledge is seen lengthwise = no voids. Per side of the XREF section:
   hollow-core = the slab has an A-FLOR-MCUT topping line (T = slab top - topping line); no MCUT = solid slab -> no voids;
   no ledge on that side (no horizontal S-BEAM-1 line at the beam's extreme x between bottom and top) and the slab abuts the face -> voids.
 Voids = OBROUNDS (ledge_beam.core_row / obround: 16.8 x 25.2 for a panel p = D - T = 40, scaled by p / 40; layer 10_PLADA_HATAH), centre soffit + p/2 + 0.8, first one >= 8.3 from the face,
 pitch >= 20, up to 3 within min(slab length, 58.9). Slab resting ON TOP of a beam / shelf (slab end at the beam's far face, Sec 32) = bearing = no voids. UNVERIFIED against the plan's span arrows."""
 import argparse, os, shutil, sys, time
+import os as _os, sys as _sys; _sys.path.insert(0, _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', 'scripts')); from dxflib import XREF_ROLE_LAYERS as RL      # Revit layer names by role
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE); sys.path.insert(0, os.path.join(HERE, '..', 'scripts'))
 import ezdxf
 import xref_overlay as XO
@@ -22,9 +23,9 @@ def side_slabs(blk):
     """per side of an XREF section block: dict(sd -> slab) with face (x of the slab end nearest the beam / wall), far (x of the other end), top, soffit, T, ledge. Beam from S-BEAM-1, else from A-WALL-1 faces."""
     L = [s for s in blk if s.dxftype() == 'LINE']
     pt = XO.pt; lay = XO.lay
-    beam = [(pt(s.dxf.start), pt(s.dxf.end)) for s in L if lay(s) == 'S-BEAM-1']
-    wall = [pt(p) for s in L if lay(s) == 'A-WALL-1' for p in (s.dxf.start, s.dxf.end)]
-    flr = [(pt(s.dxf.start), pt(s.dxf.end)) for s in L if lay(s) == 'A-FLOR-1' and abs(s.dxf.start.y - s.dxf.end.y) < 0.5]
+    beam = [(pt(s.dxf.start), pt(s.dxf.end)) for s in L if lay(s) in RL['beam']]
+    wall = [pt(p) for s in L if lay(s) in RL['wall'] for p in (s.dxf.start, s.dxf.end)]
+    flr = [(pt(s.dxf.start), pt(s.dxf.end)) for s in L if lay(s) in RL['floor'] and abs(s.dxf.start.y - s.dxf.end.y) < 0.5]
     cut = [(pt(s.dxf.start)[1], min(s.dxf.start.x, s.dxf.end.x), max(s.dxf.start.x, s.dxf.end.x)) for s in L if lay(s) == 'A-FLOR-MCUT']
     if not flr: return {}
     if beam:

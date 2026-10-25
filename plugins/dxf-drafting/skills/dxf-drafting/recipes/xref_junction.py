@@ -8,6 +8,7 @@ use your judgment'). 3841-CON_test Sec 22, 26, 30, 31, 32 (no S-BEAM-1 outline o
   STEM  : general_beam.draw(sides=...) - stirrups from the user's table, side steel by area, bar dots, slab bars only on the side that has a slab.
 Everything is UNVERIFIED engineering judgment (rule 9: numbers copied from his Sec 9 / general_beam, nothing invented); the user corrects with clouds."""
 import math
+import os as _os, sys as _sys; _sys.path.insert(0, _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', 'scripts')); from dxflib import XREF_ROLE_LAYERS as RL      # Revit layer names by role
 import ledge_beam as LB
 import general_beam as GB
 import xref_wall as XW
@@ -19,7 +20,7 @@ def lay(e): return e.dxf.layer.split('$0$')[-1]
 def read(doc, ins):
     ix, iy = ins.dxf.insert.x, ins.dxf.insert.y; L = [s for s in doc.blocks.get(ins.dxf.name) if s.dxftype() == 'LINE']
     seg = lambda s: (s.dxf.start.x + ix, s.dxf.start.y + iy, s.dxf.end.x + ix, s.dxf.end.y + iy)
-    W = [seg(s) for s in L if lay(s) == 'A-WALL-1']; F = [seg(s) for s in L if lay(s) == 'A-FLOR-1']; Bm = [seg(s) for s in L if lay(s) == 'S-BEAM-1']; C = [seg(s) for s in L if lay(s) == 'A-FLOR-MCUT']
+    W = [seg(s) for s in L if lay(s) in RL['wall']]; F = [seg(s) for s in L if lay(s) in RL['floor']]; Bm = [seg(s) for s in L if lay(s) in RL['beam']]; C = [seg(s) for s in L if lay(s) == 'A-FLOR-MCUT']
     walls = []
     xs = sorted({round(a, 1) for a, b, c, d in W if abs(a - c) < 0.05})
     used = set()

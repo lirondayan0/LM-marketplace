@@ -1,6 +1,6 @@
 """Recipe: DIMENSION PLAN as FULL-WIDTH LINES inside the plan (user corrections 2026-10-11, gallery plan of ramla_base-dimplan.dxf).
   python plan_lines.py FILE --box X0 X1 Y0 Y1 [--replace] [--dry] [-v] [--expect MTIME] [-o OUT]
-User rules (all four are hard rules, see conventions/plan-dimensions.md 'FULL-WIDTH LINES'):
+User rules (all four are hard rules, see conventions/plan-dimensions.md section 7 (superseded generator)):
  1. Every dimension line is ONE continuous line from one side of the plan (slab contour, 9_KONTUR) to the other, no breaks: items = every face the line crosses.
  2. A line passing through a wall / pier / beam gives that element's dimension as an item; when the item sits on wall material its TEXT moves beside the wall (along the line,
     perpendicular 23), never on the hatch.

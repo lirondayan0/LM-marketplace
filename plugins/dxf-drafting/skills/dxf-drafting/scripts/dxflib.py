@@ -100,11 +100,21 @@ def render_png(doc, box, out, layout=None, size=(12, 8), dpi=100):
     import matplotlib.pyplot as plt
     from ezdxf.addons.drawing import RenderContext, Frontend
     from ezdxf.addons.drawing.matplotlib import MatplotlibBackend
-    fig = plt.figure(figsize=size, dpi=dpi); ax = fig.add_axes([0, 0, 1, 1])
+    dx, dy = box[1] - box[0], box[3] - box[2]; w = size[0] * (1.4 if dx > 2 * dy else 1.0)        # the figure takes the view's shape, so the framing never depends on what else the plan holds
+    fsz = (w, min(max(w * dy / dx, 2.0), 14.0)); fig = plt.figure(figsize=fsz, dpi=dpi); ax = fig.add_axes([0, 0, 1, 1])
     lay = layout or doc.modelspace()
     ctx = RenderContext(doc); ctx.set_current_layout(lay)
-    Frontend(ctx, MatplotlibBackend(ax)).draw_layout(lay)
-    ax.set_xlim(box[0], box[1]); ax.set_ylim(box[2], box[3]); fig.savefig(out); plt.close(fig)
+    from ezdxf import bbox as _bb
+    def _near(e):      # speed (2026-10-24): only what can touch the view is drawn (the whole 10-30 MB plan took ~14-33 s); entities whose extent is unknown (XLINE, ...) are kept
+        t = e.dxftype()
+        if t in ('INSERT', 'TEXT', 'MTEXT', 'CIRCLE', 'POINT'):       # small things: their anchor point decides (bbox of an array INSERT is the slow part); 1500 margin
+            p = e.dxf.center if t == 'CIRCLE' else e.dxf.insert if t != 'POINT' else e.dxf.location
+            return box[0] - 1500 <= p[0] <= box[1] + 1500 and box[2] - 1500 <= p[1] <= box[3] + 1500
+        try: b = _bb.extents([e])
+        except Exception: return True
+        return (not b.has_data) or (b.extmax.x >= box[0] and b.extmin.x <= box[1] and b.extmax.y >= box[2] and b.extmin.y <= box[3])
+    Frontend(ctx, MatplotlibBackend(ax)).draw_layout(lay, filter_func=_near)
+    fig.set_size_inches(*fsz); ax.set_aspect('auto'); ax.set_xlim(box[0], box[1]); ax.set_ylim(box[2], box[3]); fig.savefig(out); plt.close(fig)      # ezdxf's backend resizes the figure while drawing: set it back first
 
 def diff(doc_a, doc_b):
     """(added, removed) entity descriptions in B vs A. Learn conventions from before/after pairs."""
@@ -226,3 +236,77 @@ def flight_chains(levels, gap_lo=20.0, gap_hi=40.0, tol=0.6, min_levels=3):
         chain.append(v)
     if len(chain) >= min_levels: out.append(chain)
     return out
+
+
+# ---- bring in what the plan lacks (user 2026-10-24: 'if a layer is missing from your plan, know how to bring it in and use it') ----
+ASSET_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'assets')
+_STD = {}
+def _office():
+    """(office layer table {name: {color, linetype}}, template doc) from assets/office_layers.json + assets/office_standards.dxf (rebuild: scripts/build_office_assets.py)"""
+    if not _STD:
+        p = os.path.join(ASSET_DIR, 'office_layers.json'); _STD['layers'] = json.load(open(p, encoding='utf-8')) if os.path.exists(p) else {}
+        t = os.path.join(ASSET_DIR, 'office_standards.dxf'); _STD['doc'] = ezdxf.readfile(t) if os.path.exists(t) else None
+    return _STD['layers'], _STD['doc']
+
+def ensure_standards(doc, layers=(), dimstyles=(), styles=(), blocks=(), linetypes=()):
+    """Make sure every named layer / dimstyle / text style / block / linetype EXISTS in doc; anything missing is imported from the office standard (layer: colour + linetype from the office list; the rest
+    copied from the user's reference drawing). Existing definitions are never touched (the plan's own wins). A name the office does not know is created plain (layer colour 7) with a WARNING. Returns the list of what was added (print it in the report)."""
+    from ezdxf.addons import Importer
+    lay_tab, tpl = _office(); added = []
+    def _imp(table, names):
+        if tpl is None: return False
+        try:
+            im = Importer(tpl, doc); im.import_table(table, names, replace=False); im.finalize(); return True
+        except Exception as e: print('WARNING: cannot import', table, names, e); return False
+    for n in linetypes:
+        if n not in doc.linetypes and _imp('linetypes', [n]): added.append(f'linetype {n}')
+    need_lt = [lay_tab[n]['linetype'] for n in layers if n not in doc.layers and n in lay_tab and lay_tab[n]['linetype'] not in doc.linetypes and lay_tab[n]['linetype'] != 'Continuous']
+    for lt in dict.fromkeys(need_lt):
+        if _imp('linetypes', [lt]): added.append(f'linetype {lt}')
+    for n in layers:
+        if n in doc.layers: continue
+        d = lay_tab.get(n)
+        if d: doc.layers.add(n, color=d['color'], linetype=d['linetype'] if d['linetype'] in doc.linetypes else 'Continuous'); added.append(f"layer {n} (colour {d['color']}, {d['linetype']})")
+        else: doc.layers.add(n, color=7); added.append(f'layer {n} (NOT in the office list: plain, colour 7)'); print(f'WARNING: layer {n} is not in the office layer list - created plain')
+    for n in styles:
+        if n not in doc.styles and _imp('styles', [n]): added.append(f'text style {n}')
+    for n in dimstyles:
+        if n not in doc.dimstyles:
+            if _imp('dimstyles', [n]): added.append(f'dimstyle {n}')
+            else: print(f'WARNING: dimstyle {n} missing and not importable')
+    for n in blocks:
+        if n not in doc.blocks and tpl is not None and n in tpl.blocks:
+            try:
+                im = Importer(tpl, doc); im.import_block(n, rename=False); im.finalize(); added.append(f'block {n}')
+            except Exception as e: print('WARNING: cannot import block', n, e)
+    if added: print('imported from the office standard:', '; '.join(added))
+    return added
+
+SECTION_LAYERS = ('9_KONTUR', '5_HATAH _KONTUR', '53_HATAH_MIDA', '54_HATAH_TEXT', '56_HATAH_ZET', '57_HATAH_ZIUN', '57_HATAH_DASHED', '58_HATAH_SIM', '51_HATAH_DASHED', '10_PLADA_HATAH', '2000_DOT_HELP_LINE', '72_MISGERET_WIN', '23_SIM')
+SECTION_DIMSTYLES = ('dim_25', 'dim_25_BARZEL', 'dim_25_BARZEL_Above', 'dim_100', 'dim_50', 'dim_10')
+SECTION_STYLES = ('SIVAN', 'HEBREW_NEW', 'HEBTXT', 'MIRYL')
+SECTION_BLOCKS = ('dot barzel', 'o.k block', 'MH', 'hat')
+def ensure_section_standards(doc):
+    """Everything the section recipes draw with (layers, bar-dim styles, Hebrew text styles, dot / marker blocks) - call once at the start of a recipe run."""
+    return ensure_standards(doc, SECTION_LAYERS, SECTION_DIMSTYLES, SECTION_STYLES, SECTION_BLOCKS, ('DASHED', 'DASHDOT', 'HIDDEN'))
+
+
+def audit_saved(path):
+    """number of audit errors of the SAVED file (re-opens it: the standing 'prove it loads' check). Inside a batch (env DIMPLAN_FAST=1, set by star_plan for its per-section recipe calls) the re-read is skipped
+    - each one is a full reload of a 10-30 MB plan - and 'skipped' is returned; the round re-opens and audits the final file once (sections_round step 6)."""
+    import os
+    if os.environ.get('DIMPLAN_FAST'): return 'skipped (batch; the round audits the final file)'
+    import ezdxf
+    return len(ezdxf.readfile(path).audit().errors)
+
+
+# Revit layer names by role in XREF section blocks. First entry = 4238 / 3841 exports; the others = 3600-CON-11 (UNVERIFIED mapping by geometry: beam rectangle, slab outline, wall; no example from the user yet)
+def xref_section_number(name):
+    """section number of a Revit section XREF block name, or None. Namings: '... Sec 8-8' (3841 / 4238-CON), '... Section - -1 - Section 8' (4238-CON-1008-1009), '... Section - Sec0-8' (3600-CON-11)"""
+    import re
+    for pat in (r'Sec (\d+)-(\d+)$', r'Section - -?\d+ - Section (\d+)$', r'Section - Sec\d*-(\d+)$'):
+        m = re.search(pat, name)
+        if m and (len(m.groups()) == 1 or m.group(1) == m.group(2)): return int(m.group(1))
+    return None
+
+XREF_ROLE_LAYERS = {'beam': ('S-BEAM-1', 'S-280-M_STRUCT_FRAME-1'), 'wall': ('A-WALL-1', 'A-200-M_WALL_EXT-1', 'A-200-M_WALL_EXT-2'), 'floor': ('A-FLOR-1', 'A-230-M_FLOOR-1')}

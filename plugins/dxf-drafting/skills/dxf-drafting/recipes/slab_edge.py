@@ -106,6 +106,7 @@ def draw_shutter(doc, D, P, b, h, S):
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 # THICK free edge (D >= THICK_D): the user's own 4-4 for D=80 (red cloud 2026-10-22, brenda_karka, cloud 24D04). Local coordinates u (from the end face, negative = into the slab), v (from the soffit).
 THICK_D = 60.0                       # UNVERIFIED threshold; evidence = one example, D=80
+FREE_EDGE_MESH = os.environ.get('FREE_EDGE_MESH') == '1'               # user 2026-10-24: NO restraint mesh anywhere, also not on the thick free edge (his 4-4 template had it); code kept, switch on only if he asks again
 T_L, T_DOTS, T_X0 = 143.1, 10, -4.3  # shown length; 10 dots / row, step 15, first 4.3 from the face
 BENCH_SCALE, BENCH_RIGHT_U, BENCH_BOTTOM_V = 0.5, -168.9, -98.0     # plan detail copied at 1:2 (plan 1:50 -> sheet 1:25), frame right edge / bottom relative to the end face / soffit
 BENCH_LAYERS = ('57_HATAH_ZIUN', '44_TEXT_ZIUN', '4_TEXT')
@@ -144,8 +145,9 @@ def draw_thick(doc, D, ex, ey, tmpl, cut=None):
     dot = lambda x, y: LB.add_dot(msp, *P((x, y)), '57_HATAH_ZIUN')
     for k in range(T_DOTS): dot(T_X0 - 15 * k, D - 4.1); dot(T_X0 - 15 * k, 4.4)                                   # top / bottom rows
     mid = D / 2.0
-    poly([(-143.3, mid + 0.1), (-10.0, mid + 0.1)], 'HATAH_ZIUN_17'); poly([(-142.0, mid + 2.1), (-20.1, mid + 2.1)], '2000_DOT_HELP_LINE')   # restraint mesh bar + dashed help line
-    for k in range(9): dot(-140.1 + 15 * k, mid + 2.1)                                                              # restraint mesh dots
+    if FREE_EDGE_MESH:
+        poly([(-143.3, mid + 0.1), (-10.0, mid + 0.1)], 'HATAH_ZIUN_17'); poly([(-142.0, mid + 2.1), (-20.1, mid + 2.1)], '2000_DOT_HELP_LINE')   # restraint mesh bar + dashed help line
+        for k in range(9): dot(-140.1 + 15 * k, mid + 2.1)                                                          # restraint mesh dots
     for k in range(3): dot(T_X0, mid + 0.2 + 20 * (k - 1))                                                          # edge bars $12@20 (cut ends)
 
     def txt(raw, x, y, style, h=6.0, w=0.8, gen=0):
@@ -153,11 +155,12 @@ def draw_thick(doc, D, ex, ey, tmpl, cut=None):
         if gen: at['text_generation_flag'] = gen
         msp.add_text(raw, height=h, dxfattribs=at)
     # restraint mesh note: shelf + two arrow leaders to the mesh bar start
-    sy = mid - 13.6; poly([(-119.5, sy), (-76.8, sy)], z)
-    txt('#\xa410@15\\15', -117.5, sy + 1.5, 'HEBREW_NEW'); txt('ra, rhxui', -78.1, sy - 7.4, 'SIVAN18', gen=2)
-    for tip in ((-125.1, mid + 0.9), (-140.1, mid + 2.1)):
-        ld = msp.add_leader([P(tip), P((-119.5, sy)), P((-76.8, sy))], dimstyle='DIM25', dxfattribs={'layer': z})
-        ld.set_xdata('ACAD', [(1000, 'DSTYLE'), (1002, '{'), (1070, 77), (1070, 0), (1002, '}')])
+    if FREE_EDGE_MESH:
+        sy = mid - 13.6; poly([(-119.5, sy), (-76.8, sy)], z)
+        txt('#\xa410@15\\15', -117.5, sy + 1.5, 'HEBREW_NEW'); txt('ra, rhxui', -78.1, sy - 7.4, 'SIVAN18', gen=2)
+        for tip in ((-125.1, mid + 0.9), (-140.1, mid + 2.1)):
+            ld = msp.add_leader([P(tip), P((-119.5, sy)), P((-76.8, sy))], dimstyle='DIM25', dxfattribs={'layer': z})
+            ld.set_xdata('ACAD', [(1000, 'DSTYLE'), (1002, '{'), (1070, 77), (1070, 0), (1002, '}')])
     # edge bars note
     line((6.5, mid + 9.7), (36.3, mid + 9.7), z); poly([(6.5, mid + 9.7), (T_X0, mid + 0.2)], z); poly([(6.5, mid + 9.7), (T_X0, mid + 0.2 - 20)], z); txt('$12@20', 8.9, mid + 11.6, 'HEBREW_NEW')
     # top / bottom bar notes ("per plan"), elbow heights as in the example
@@ -193,13 +196,14 @@ def draw_thick(doc, D, ex, ey, tmpl, cut=None):
     return note
 
 
-def main():
+def main(argv=None, doc=None):
+    """argv / doc (batch use, star_plan): draw into the already open `doc` and do not save"""
     a = argparse.ArgumentParser(); a.add_argument('file'); a.add_argument('name'); a.add_argument('--profile', default='israeli-structural'); a.add_argument('--box', nargs=4, type=float, required=True)
     a.add_argument('--slab', type=float, required=True); a.add_argument('--d-label', help="write this symbol (H) instead of the number on the thickness dim: the plan gives no D"); a.add_argument('--cut', nargs=2, type=float, help='cut mid-point X Y: finds the plan shear-bench detail for a thick edge'); a.add_argument('--slab-side', choices=['left', 'right'], default='left', help='slab on the LEFT (user detail) or RIGHT of the view (mirror image)'); a.add_argument('--replace', action='store_true'); a.add_argument('-o'); a.add_argument('--png'); a.add_argument('--note'); a.add_argument('--detail', choices=['none', 'plan', 'ss'], default='none'); a.add_argument('--shutter', nargs=2, type=float, metavar=('B', 'H'), help='roller-shutter downstand b x h at the free end (plan text on automatic_Roller_shutter)')
-    a = a.parse_args(); LB.apply_profile(a.profile)
+    a = a.parse_args(argv); LB.apply_profile(a.profile)
     global SHUTTER; SHUTTER = tuple(a.shutter) if a.shutter else None
     bx0, by0, bw, bh = a.box; D = a.slab; S = 1 if a.slab_side == 'left' else -1; ex, ey = (bx0 + EDGE_X if S == 1 else bx0 + bw - EDGE_X), by0 + SOFFIT_Y
-    doc = ezdxf.readfile(a.file); tmpl = LB.template_texts(doc)
+    batch = doc is not None; doc = doc if batch else ezdxf.readfile(a.file); tmpl = LB.template_texts(doc)
     if a.replace: print('cleared', LB.clear_cell(doc, (bx0, by0, bx0 + bw, by0 + bh)), 'old entities')
     if a.replace:                                          # LEADER entities (arrow leaders of the thick detail) are not touched by clear_cell
         n_ld = 0
@@ -219,9 +223,10 @@ def main():
     for t in doc.modelspace().query('TEXT'):                  # the example's title block sits 1.6 higher than the beam sections' formula
         if bx0 < t.dxf.insert.x < bx0 + bw and by0 < t.dxf.insert.y < by0 + bh and t.dxf.layer == LB.PROF['layers']['text'] and (t.dxf.text.startswith(T['prefix']) or t.dxf.text == T['scale_text']['text']):
             t.dxf.insert = (t.dxf.insert.x, t.dxf.insert.y + 1.6, t.dxf.insert.z)
+    if batch: print(f'{a.name}: free slab edge D={D:.0f}'); return
     out = a.o or a.file
     if out == a.file: LB.backup(a.file, 'slabedge-' + a.name)
-    doc.saveas(out); print('saved', out, '| audit errors', len(ezdxf.readfile(out).audit().errors)); print(f'{a.name}: free slab edge D={D:.0f}')
+    doc.saveas(out); print('saved', out, '| audit errors', LB.audit_saved(out)); print(f'{a.name}: free slab edge D={D:.0f}')
     if a.png: LB.render_png(doc, (ex - 130, ex + 60, ey - 110, ey + 130), a.png)
 
 if __name__ == '__main__': main()

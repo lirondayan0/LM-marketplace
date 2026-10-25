@@ -1,28 +1,19 @@
 {
- "_doc": "Drafting profile = every office-specific constant a recipe needs. New office/drawing type: copy this file, change values, pass --profile NAME. Evidence for each value: conventions/section-drawings.md",
+ "_doc": "Drafting profile = every office-specific constant a recipe needs. New office/drawing type: copy this file, change values, pass --profile NAME. Evidence for each value: conventions/sections-drawing.md, office-standards.md",
  "name": "israeli-structural",
  "units": "cm",
  "plot_scale": 25,
  "layers": {
-  "outline": [
-   "9_KONTUR",
-   "5_HATAH _KONTUR"
-  ],
+  "outline": ["9_KONTUR", "5_HATAH _KONTUR"],
   "outline_new": "9_KONTUR",
   "break": "5_HATAH _KONTUR",
   "dim": "53_HATAH_MIDA",
   "text": "54_HATAH_TEXT",
   "level_marker": "57_HATAH_ZIUN",
-  "markup": [
-   "SHINUIM-TIKUNIM",
-   "60_HATCH_ADAMA"
-  ],
+  "markup": ["SHINUIM-TIKUNIM", "60_HATCH_ADAMA"],
   "target_cell": "72_MISGERET_WIN",
   "beam_wall": "93_KORA",
-  "beam_edges": [
-   "93_KORA",
-   "82_KIR_OLE"
-  ]
+  "beam_edges": ["93_KORA", "82_KIR_OLE"]
  },
  "dim": {
   "style": "dim_25",
@@ -56,36 +47,12 @@
   "ltscale": 5.0,
   "slab_shown": 59,
   "cell_beam_bottom_y": 236.3,
-  "zigzag_slab25": [
-   [
-    0,
-    4.455
-   ],
-   [
-    0,
-    -7.72
-   ],
-   [
-    4.07,
-    -8.9
-   ],
-   [
-    -4.36,
-    -11.16
-   ],
-   [
-    0,
-    -12.76
-   ]
-  ],
+  "zigzag_slab25": [ [0, 4.455], [0, -7.72], [4.07, -8.9], [-4.36, -11.16], [0, -12.76] ],
   "zigzag_below_slab": 3.47
  },
  "level_marker": {
   "block": "o.k block",
-  "tip_in_block": [
-   114465.5024477025,
-   65190.88660830997
-  ],
+  "tip_in_block": [114465.5024477025, 65190.88660830997],
   "dx_from_beam_centre": 9.5
  },
  "cut_mark": {
@@ -103,28 +70,7 @@
   "SP_V": 17.0,
   "SP_FACE": 23.6,
   "DOT_D": 1.0,
-  "BREAK_L": [
-   [
-    0,
-    10
-   ],
-   [
-    0,
-    -13.2
-   ],
-   [
-    -6.3,
-    -14.4
-   ],
-   [
-    4.9,
-    -17.0
-   ],
-   [
-    0,
-    -18.3
-   ]
-  ],
+  "BREAK_L": [ [0, 10], [0, -13.2], [-6.3, -14.4], [4.9, -17.0], [0, -18.3] ],
   "MESH_DX0": 8.8,
   "MESH_STEP": 20.0,
   "MESH_N": 3,
@@ -162,13 +108,8 @@
   "CAST_SLAB_STEP": 15.0,
   "CAST_VSTEP": 20.0
  },
- "beam_section_doc": "Constants of recipes/ledge_beam.py (hollow-core beam sections + stirrup detail row + cast L), measured on the user's ground-floor examples and corrected by the user; keys are the constant names in the recipe, any key present here overrides the default. Evidence: conventions/section-drawings.md",
- "examples_box": [
-  113000,
-  68300,
-  114800,
-  69000
- ],
+ "beam_section_doc": "Constants of recipes/ledge_beam.py (hollow-core beam sections + stirrup detail row + cast L), measured on the user's ground-floor examples and corrected by the user; keys are the constant names in the recipe, any key present here overrides the default. Evidence: conventions/sections-drawing.md",
+ "examples_box": [113000, 68300, 114800, 69000],
  "examples_box_doc": "region (x0, y0, x1, y1) of the user's finished example sheet; note-text styles/heights are copied from the first matching text found there",
  "plan": {
   "beam_label": "^\\d{2,3}/\\d{2,3}$",
@@ -180,23 +121,13 @@
   "_doc": "General sections the user drew once and wants REUSED (copy_region.py --general N), with the box of their drawing in the user's file and where their marks go.",
   "5": {
    "title": "5-5",
-   "box": [
-    113478,
-    48703,
-    113877,
-    49153
-   ],
+   "box": [113478, 48703, 113877, 49153],
    "what": "wall B=20 H=74 + slab D=25 on one side (copy of ground example 1-1)",
    "marks": "one pair per elevator shaft / stairwell on the wall bordering a slab, slab on the right (scripts/shaft_walls.py)"
   },
   "6": {
    "title": "6-6",
-   "box": [
-    113877,
-    48703,
-    114277,
-    49153
-   ],
+   "box": [113877, 48703, 114277, 49153],
    "what": "simple cast beam B=20 H=74 (min 40) with slab D=25 on BOTH sides, shown 58.9 each side",
    "marks": "simple beam with a slab on both sides where no hollow-core section 1-4 applies (UNVERIFIED which beams on other floors)"
   }
@@ -207,316 +138,88 @@
    "note": "$12@15",
    "title": "קורות רגילות Φ12@15",
    "rows": {
-    "15": [
-     1,
-     9
-    ],
-    "20": [
-     1,
-     14
-    ],
-    "25": [
-     1,
-     19
-    ],
-    "30": [
-     1,
-     24
-    ],
-    "35": [
-     1,
-     29
-    ],
-    "40": [
-     1,
-     34
-    ],
-    "45": [
-     1,
-     39
-    ],
-    "50": [
-     2,
-     30
-    ],
-    "55": [
-     2,
-     35
-    ],
-    "60": [
-     2,
-     35
-    ],
-    "65": [
-     2,
-     40
-    ],
-    "70": [
-     2,
-     45
-    ],
-    "75": [
-     2,
-     45
-    ],
-    "80": [
-     2,
-     50
-    ],
-    "85": [
-     3,
-     35
-    ],
-    "90": [
-     3,
-     35
-    ],
-    "95": [
-     3,
-     40
-    ],
-    "100": [
-     3,
-     40
-    ],
-    "105": [
-     3,
-     40
-    ],
-    "110": [
-     3,
-     45
-    ],
-    "115": [
-     3,
-     45
-    ],
-    "120": [
-     3,
-     50
-    ],
-    "125": [
-     4,
-     40
-    ],
-    "130": [
-     4,
-     40
-    ],
-    "135": [
-     4,
-     45
-    ],
-    "140": [
-     4,
-     45
-    ],
-    "145": [
-     4,
-     45
-    ],
-    "150": [
-     4,
-     50
-    ],
-    "155": [
-     4,
-     50
-    ],
-    "160": [
-     4,
-     50
-    ],
-    "165": [
-     5,
-     45
-    ],
-    "170": [
-     5,
-     45
-    ],
-    "175": [
-     5,
-     45
-    ],
-    "180": [
-     5,
-     45
-    ],
-    "185": [
-     5,
-     50
-    ],
-    "190": [
-     5,
-     50
-    ],
-    "195": [
-     5,
-     50
-    ],
-    "200": [
-     5,
-     55
-    ]
+    "15": [1, 9],
+    "20": [1, 14],
+    "25": [1, 19],
+    "30": [1, 24],
+    "35": [1, 29],
+    "40": [1, 34],
+    "45": [1, 39],
+    "50": [2, 30],
+    "55": [2, 35],
+    "60": [2, 35],
+    "65": [2, 40],
+    "70": [2, 45],
+    "75": [2, 45],
+    "80": [2, 50],
+    "85": [3, 35],
+    "90": [3, 35],
+    "95": [3, 40],
+    "100": [3, 40],
+    "105": [3, 40],
+    "110": [3, 45],
+    "115": [3, 45],
+    "120": [3, 50],
+    "125": [4, 40],
+    "130": [4, 40],
+    "135": [4, 45],
+    "140": [4, 45],
+    "145": [4, 45],
+    "150": [4, 50],
+    "155": [4, 50],
+    "160": [4, 50],
+    "165": [5, 45],
+    "170": [5, 45],
+    "175": [5, 45],
+    "180": [5, 45],
+    "185": [5, 50],
+    "190": [5, 50],
+    "195": [5, 50],
+    "200": [5, 55]
    }
   },
   "transfer": {
    "note": "$12/14/16@15",
    "title": "קורות טרנספורמציה Φ12/14/16@15 תלוי בעומס הגזירה",
    "rows": {
-    "15": [
-     1,
-     9
-    ],
-    "20": [
-     1,
-     14
-    ],
-    "25": [
-     1,
-     19
-    ],
-    "30": [
-     1,
-     24
-    ],
-    "35": [
-     2,
-     20
-    ],
-    "40": [
-     2,
-     25
-    ],
-    "45": [
-     2,
-     25
-    ],
-    "50": [
-     2,
-     30
-    ],
-    "55": [
-     2,
-     30
-    ],
-    "60": [
-     2,
-     35
-    ],
-    "65": [
-     3,
-     25
-    ],
-    "70": [
-     3,
-     25
-    ],
-    "75": [
-     3,
-     30
-    ],
-    "80": [
-     3,
-     30
-    ],
-    "85": [
-     3,
-     35
-    ],
-    "90": [
-     3,
-     35
-    ],
-    "95": [
-     4,
-     30
-    ],
-    "100": [
-     4,
-     30
-    ],
-    "105": [
-     4,
-     35
-    ],
-    "110": [
-     4,
-     35
-    ],
-    "115": [
-     4,
-     35
-    ],
-    "120": [
-     4,
-     40
-    ],
-    "125": [
-     5,
-     30
-    ],
-    "130": [
-     5,
-     35
-    ],
-    "135": [
-     5,
-     35
-    ],
-    "140": [
-     5,
-     35
-    ],
-    "145": [
-     5,
-     40
-    ],
-    "150": [
-     5,
-     40
-    ],
-    "155": [
-     6,
-     35
-    ],
-    "160": [
-     6,
-     35
-    ],
-    "165": [
-     6,
-     35
-    ],
-    "170": [
-     6,
-     35
-    ],
-    "175": [
-     6,
-     40
-    ],
-    "180": [
-     6,
-     40
-    ],
-    "185": [
-     7,
-     35
-    ],
-    "190": [
-     7,
-     35
-    ],
-    "195": [
-     7,
-     40
-    ],
-    "200": [
-     7,
-     40
-    ]
+    "15": [1, 9],
+    "20": [1, 14],
+    "25": [1, 19],
+    "30": [1, 24],
+    "35": [2, 20],
+    "40": [2, 25],
+    "45": [2, 25],
+    "50": [2, 30],
+    "55": [2, 30],
+    "60": [2, 35],
+    "65": [3, 25],
+    "70": [3, 25],
+    "75": [3, 30],
+    "80": [3, 30],
+    "85": [3, 35],
+    "90": [3, 35],
+    "95": [4, 30],
+    "100": [4, 30],
+    "105": [4, 35],
+    "110": [4, 35],
+    "115": [4, 35],
+    "120": [4, 40],
+    "125": [5, 30],
+    "130": [5, 35],
+    "135": [5, 35],
+    "140": [5, 35],
+    "145": [5, 40],
+    "150": [5, 40],
+    "155": [6, 35],
+    "160": [6, 35],
+    "165": [6, 35],
+    "170": [6, 35],
+    "175": [6, 40],
+    "180": [6, 40],
+    "185": [7, 35],
+    "190": [7, 35],
+    "195": [7, 40],
+    "200": [7, 40]
    }
   },
   "_doc2": "2026-10-16: the user re-marked the STANDARD table in a red cloud (pasted picture on layer claude): beam thickness 50 -> 2 stirrups of 30 (was read as 1 x 44); all other rows identical. Standard = every S / SS section."

@@ -5,20 +5,23 @@
 --box = the section's extent (outline + notes). The slab = the 9_KONTUR horizontal line with the outermost end on that side; the label's far end sits on the slab's far end,
 text 7.3 above the slab top with a slope ARROW under it (user's own 3-3 arrangement, supersedes 'above the notes'); top-bar notes in that zone are moved aside. Text style/attributes copied from a bar note of the section (SIVAN 0.7, mirrored).  Snapshot first (.bak-slope-HHMMSS)."""
 import argparse, os, shutil, sys, time
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + '/../scripts')
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + '/../scripts'); sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))      # -I (isolated) runs do not put the script folder on the path
 import ezdxf, dxflib as DL
+OUTLINE = ('9_KONTUR', '5_HATAH _KONTUR')
 TEXT_UP, END_IN, ARROW_DOWN, PITCH = 7.3, 7.8, 3.5, 15.0   # user's 3-3 arrangement (2026-10-22)
 TXT = {'cast': 'תקרה יצוקה בשיפוע', 'hollow': 'תקרת פלדלת טרומית בשיפוע'}
 UP = 20.0
 
 def label(doc, box, side, kind, arrow='right', dry=False):
     x0, x1, y0, y1 = box; msp = doc.modelspace()
-    hl = []
-    for e in msp.query('LINE'):
-        if e.dxf.layer != '9_KONTUR': continue
-        a, b = e.dxf.start, e.dxf.end
-        if abs(a.y - b.y) < .01 and x0 <= min(a.x, b.x) and max(a.x, b.x) <= x1 and y0 <= a.y <= y1: hl.append((min(a.x, b.x), max(a.x, b.x), a.y))
-    if not hl: raise SystemExit('no 9_KONTUR horizontal lines in the box')
+    hl = []                                                    # horizontal outline segments: his hand sections use LINEs, the generated ones polylines, on the outline layers
+    for e in msp.query('LINE LWPOLYLINE'):
+        if e.dxf.layer not in OUTLINE: continue
+        if e.dxftype() == 'LINE': segs = [((e.dxf.start.x, e.dxf.start.y), (e.dxf.end.x, e.dxf.end.y))]
+        else: pp = [(q[0], q[1]) for q in e.get_points('xy')]; segs = list(zip(pp, pp[1:])) + ([(pp[-1], pp[0])] if e.closed and len(pp) > 2 else [])
+        for a, b in segs:
+            if abs(a[1] - b[1]) < .01 and x0 <= min(a[0], b[0]) and max(a[0], b[0]) <= x1 and y0 <= a[1] <= y1: hl.append((min(a[0], b[0]), max(a[0], b[0]), a[1]))
+    if not hl: raise SystemExit('no horizontal outline (9_KONTUR / 5_HATAH _KONTUR) in the box')
     far = (max(h[1] for h in hl) if side == 'right' else min(h[0] for h in hl))
     slab = [h for h in hl if (h[1] == far if side == 'right' else h[0] == far)]
     top = max(h[2] for h in slab); xs = (far if side == 'right' else far)
@@ -56,8 +59,15 @@ def label(doc, box, side, kind, arrow='right', dry=False):
     return t, top, moved
 
 if __name__ == '__main__':
-    ap = argparse.ArgumentParser(); ap.add_argument('file'); ap.add_argument('--box', nargs=4, type=float, required=True); ap.add_argument('--side', required=True, choices=('left', 'right'))
-    ap.add_argument('--kind', required=True, choices=('cast', 'hollow')); ap.add_argument('--arrow', choices=('left', 'right'), default='right', help='slope arrow direction in the section'); ap.add_argument('--dry', action='store_true'); a = ap.parse_args()
+    ap = argparse.ArgumentParser(); ap.add_argument('file'); ap.add_argument('--box', nargs=4, type=float); ap.add_argument('--side', choices=('left', 'right')); ap.add_argument('--json', help='sidecar written by star_plan --draw: [{n, box, side, kind}], one label each, then the sidecar is deleted')
+    ap.add_argument('--kind', choices=('cast', 'hollow')); ap.add_argument('--arrow', choices=('left', 'right'), default='right', help='slope arrow direction in the section'); ap.add_argument('--dry', action='store_true'); a = ap.parse_args()
+    if a.json:
+        import json; todo = json.load(open(a.json)); doc = ezdxf.readfile(a.file); done = 0
+        for e in todo:
+            try: t, top, mv = label(doc, e['box'], e['side'], e['kind']); done += 1; print(f"section {e['n']}-{e['n']}: sloped slab labelled ({e['kind']}, {e['side']}), {len(mv)} note(s) moved aside")
+            except (Exception, SystemExit) as ex: print(f"WARNING section {e['n']}-{e['n']}: slope label NOT added ({ex}) - add it by hand")
+        doc.saveas(a.file); os.remove(a.json); print(f'{done} slope label(s) of {len(todo)} saved'); sys.exit(0)
+    if not (a.box and a.side and a.kind): ap.error('--box, --side and --kind are required (or --json)')
     doc = ezdxf.readfile(a.file); t, top, mv = label(doc, a.box, a.side, a.kind, a.arrow)
     print('label', a.kind, 'at', (round(t.dxf.insert.x, 1), round(t.dxf.insert.y, 1)), 'slab top', round(top, 1), 'notes moved', mv)
     if not a.dry:

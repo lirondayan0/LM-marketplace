@@ -1,4 +1,4 @@
-"""Redraw general-beam sections IN PLACE inside their existing frames (user 2026-10-22: corrected slab thicknesses + restraint mesh for D >= 60).
+"""Redraw general-beam sections IN PLACE inside their existing frames (user 2026-10-22: corrected slab thicknesses; the restraint mesh for D >= 60 was later REMOVED by him, general_beam.RESTRAINT_MESH = False).
 Keeps each section's origin (beam bottom-left corner read from its outline), clears the frame region, draws general_beam.draw again, applies --detail.
   python redraw_general.py FILE SPEC.json [--dry]     SPEC = [{"n": 4, "B": 150, "H": 125, "Dl": 60, "Dr": 30, "dl": 0, "dr": 95, "stirrups": "transfer", "detail": "plan", "h_label": null}, ...]
 Then run the finish passes on the sheet (sivan_text, leader_fit, rebar_color, align_row, cell_dupes, text_overlap, bar_arrays)."""

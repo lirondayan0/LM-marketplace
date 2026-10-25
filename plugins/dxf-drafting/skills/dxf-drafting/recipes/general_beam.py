@@ -15,14 +15,16 @@ import dxflib as DL
 
 SLAB_END, COL_L, COL_R, TOP_IN, BOT_IN, SOFFIT_IN = 58.9, 4.4, 4.35, 4.3, 4.5, 4.4
 DOT_W, DOT_LEN, DOT_FIRST, DOT_STEP, DOT_N, COL_STEP, COL_MIN = 1.25, 1.3, 9.9, 15.0, 4, 20.0, 8.0
-ST_X, ST_GAP = 22.1, 4.5                        # stirrup elevation starts 22.1 right of the slab end, halves 4.5 apart
+CLOSED_MAX_H = 100.0                            # beam height up to which the stirrup elevation is ONE closed stirrup (user 2026-10-25); above it the two halves
+ST_X, ST_GAP = 52.8, 4.5                        # stirrup elevation starts 52.8 right of the slab end (was 22.1: its '74' dim sat ON the slab-thickness dim line; user 2026-10-25 moved it +30.7 in korchakk 1-1, +16.7 in 4-4), halves 4.5 apart
 CELL_U0, CELL_V0 = 179.7, 248.8                 # beam origin inside the 400 x 450 cell (user's 6-6, B=20)
 MIN_H = 40.0                                    # 'H(min=40cm)' of the 6-6 label
 
 BOTTOM_BAR_INTO_BEAM = 60.0
+MH_SHIFT, MH_SHIFT_MIN_B = 18.3, 60.0
 OVERLAY = False   # user 2026-10-22: section over a Revit XREF - reinforcement only (no outline, breaks, dims of the section, level marker, title)
 RESTRAINT_MESH = False   # user 2026-10-22 (later): 'there is no restraint grid in the ceilings' - REMOVED from cross-sections; code kept, switch on only if he asks again
-THICK_D = 60.0     # user 2026-10-22: a ceiling of 60 cm or more gets a RESTRAINT MESH (#$10@15\15 'rasat risun') at mid-depth - copied from his thick free-edge 4-4 (slab_edge.draw_thick)
+THICK_D = 60.0     # threshold of the restraint mesh, used ONLY if RESTRAINT_MESH is switched on (it is off: user 2026-10-22 'no restraint grid in the ceilings'); the thick FREE edge (slab_edge.draw_thick) has no mesh either since 2026-10-24 (slab_edge.FREE_EDGE_MESH)
 
 def beam_dot_rows(H, D, step=None, fill_gap=False):
     """v positions of the beam bar dots: top, slab soffit + 4.4, then every 20 down while 8+ above the bottom row, bottom 4.5 (6-6: 69.7, 53.4, 33.4, 13.4, 4.5 for H=74, D=25).
@@ -48,14 +50,22 @@ def draw(doc, B, D, H, ox, oy, name, tmpl, lab, centre_u, stirrups='standard', D
     hasL, hasR = sides in ('both', 'left'), sides in ('both', 'right')      # 2026-10-23: a wall (no slab) on one side of the beam - XREF Sec 26: sides='left'
     D = min([v for v, ok in ((dl + Dl, hasL), (dr + Dr, hasR)) if ok]); yS = H - D                              # depth of the shallower slab soffit: the beam's own bar rows follow it
     # outline: beam below the slab, slab soffit and top lines both sides, top line through the beam
-    if dl == 0 and dr == 0 and Dl == Dr: _ol = (((0, yS), (0, 0)), ((0, 0), (B, 0)), ((B, 0), (B, yS)), ((B, yS), (R, yS)), ((0, H), (R, H)), ((0, yS), (Lft, yS)), ((B, H), (Lft, H)))
+    if not (hasL and hasR):      # a FREE EDGE on one side (korchakk 2026-10-23: 9_KONTUR on the beam face = edge beam): the beam face runs to the top there, only the existing side carries a slab
+        _ol = [((0, 0), (B, 0)), ((0, H), (B, H))] + ([((0, ySl), (0, 0)), ((0, ySl), (Lft, ySl)), ((0, yTl), (Lft, yTl))] + ([((0, yTl), (0, H))] if dl > 0 else []) if hasL else [((0, 0), (0, H))]) \
+            + ([((B, 0), (B, ySr)), ((B, ySr), (R, ySr)), ((B, yTr), (R, yTr))] + ([((B, yTr), (B, H))] if dr > 0 else []) if hasR else [((B, 0), (B, H))])
+    elif dl == 0 and dr == 0 and Dl == Dr: _ol = (((0, yS), (0, 0)), ((0, 0), (B, 0)), ((B, 0), (B, yS)), ((B, yS), (R, yS)), ((0, H), (R, H)), ((0, yS), (Lft, yS)), ((B, H), (Lft, H)))
     else: _ol = (((0, ySl), (0, 0)), ((0, 0), (B, 0)), ((B, 0), (B, ySr)), ((B, ySr), (R, ySr)), ((0, ySl), (Lft, ySl)), ((0, H), (B, H)), ((B, yTr), (R, yTr)), ((0, yTl), (Lft, yTl))) + ((((B, yTr), (B, H)),) if dr > 0 else ()) + ((((0, yTl), (0, H)),) if dl > 0 else ())
     for a, b in ([] if OVERLAY else _ol): line(a, b, Ly['outline_new'])
     _zg = lambda Ds: [(x, y * Ds / 25.0) if i else (x, y) for i, (x, y) in enumerate(LB.PROF['outline']['zigzag_slab25'])] + [(0, -(Ds + LB.PROF['outline']['zigzag_below_slab']))]
-    if not OVERLAY: poly([(R + x, yTr + y) for x, y in _zg(Dr)], Ly['break']); poly([(Lft - x, yTl + y) for x, y in _zg(Dl)], Ly['break'])
-    _anc = min(BOTTOM_BAR_INTO_BEAM, B - 3)          # user 2026-10-21 (3-3 cloud + 60 dim): the slab BOTTOM bar enters the beam 60 from the face; top bars run through
-    if hasR: line((B - _anc, ySr + 3), (R, ySr + 3), zi); line((3, yTr - 3), (R, yTr - 3), zi)                  # slab bar lines (each side at its own levels)
-    if hasL: line((_anc, ySl + 3), (Lft, ySl + 3), zi); line((B - 3, yTl - 3), (Lft, yTl - 3), zi)
+    if not OVERLAY and hasR: poly([(R + x, yTr + y) for x, y in _zg(Dr)], Ly['break'])
+    if not OVERLAY and hasL: poly([(Lft - x, yTl + y) for x, y in _zg(Dl)], Ly['break'])
+    _anc = min(BOTTOM_BAR_INTO_BEAM, B - 3)          # user 2026-10-21 (3-3 cloud + 60 dim): slab bars enter the beam 60 from the face (top bars too since 2026-10-24, see below)
+    # user 2026-10-24 (red cloud on netivot 7-7, lower-left slab top bar drawn through the whole 130 beam; 'a solid slab beside a beam: its bars go 60 into the beam'): a TOP bar enters 60 too, EXCEPT where both slab tops are flush
+    # (one continuous slab top over the beam: the bar runs through, as before). One-sided slab or different top levels (stepped) -> 60 from the face it enters through (W-3 if narrower).
+    _flush = hasL and hasR and abs(yTl - yTr) < 0.5
+    _tR = 3 if _flush else B - _anc; _tL = B - 3 if _flush else _anc
+    if hasR: line((B - _anc, ySr + 3), (R, ySr + 3), zi); line((_tR, yTr - 3), (R, yTr - 3), zi)                  # slab bar lines (each side at its own levels)
+    if hasL: line((_anc, ySl + 3), (Lft, ySl + 3), zi); line((_tL, yTl - 3), (Lft, yTl - 3), zi)
     _n, _w, _, _ = LB.stirrup_layout(B, stirrups); LB.draw_stem_stirrups(msp, P, B, H, _n, _w, zi, closed_top=False)   # the table's stirrups inside the section (standard 65 -> 2 x 40)
     def dot(cx, y, sgn): msp.add_lwpolyline([(ox + cx - sgn * DOT_LEN / 2, oy + y, 0, 0, -sgn), (ox + cx + sgn * DOT_LEN / 2, oy + y, 0, 0, -sgn)], format='xyseb', close=True, dxfattribs=dict(layer=zi, const_width=DOT_W))
     _md, _ms, _mnote = DL.mid_steel(B, H)            # middle steel by section area (user 2026-10-21)
@@ -91,6 +101,8 @@ def draw(doc, B, D, H, ox, oy, name, tmpl, lab, centre_u, stirrups='standard', D
     for x, y in (((xl, yt), (xr, yt)) if WIDE else ((xl, yt), (xr, yt), (xl, y2), (xr, y2))): line((ex, ey), (x, y), z)
     poly([(ex, ey), (ex + 23.6, ey)], z); txt('4$12', 'c4', ex + 3.4, ey + 0.7)
     ex, ey = B + 4.5, -5.6                                                                           # 2$12 bottom pair
+    _eyB = ySr + SOFFIT_IN - 16.7      # the right slab's bottom note (drawn below): on a WIDE beam with slab on the right its shelf sits within ~3 of this one and the two notes overlapped (netivot 9-9)
+    if hasR and WIDE and abs(ey - _eyB) < 9.2: ex, ey = B - 1.2, _eyB - 9.2       # his hand edit of netivot 9-9 (B=130): the beam-bottom note 9.2 BELOW the slab-bottom note, joint 5.7 further left (1 example, UNVERIFIED beyond it)
     for x in (xl, xr): line((ex, ey), (x, BOT_IN), z)
     poly([(ex, ey), (ex + 21.9, ey)], z); txt('2$12', 'c2', ex + 2.9, ey + 0.7)
     mids = [y for y in rows[2:-1]]
@@ -143,13 +155,22 @@ def draw(doc, B, D, H, ox, oy, name, tmpl, lab, centre_u, stirrups='standard', D
         _t = f"{n_st}{note_st}" + ('' if lab['H-6'] else f" L={round(2 * (w_st + h6) + 12)}"); _sx = 3 - 6.7
         try:                                  # user 2026-10-21 (1-1 / 2-2): the table note is CENTRED under the stirrup group (group 3 .. B-3, centre B/2)
             from shx_width import text_extent; _a, _b = text_extent(tmpl['stirrup']['style'], _t, 0.0, tmpl['stirrup']['height'], tmpl['stirrup'].get('width', 1.0)); _sx = B / 2 - (_a + _b) / 2
-        except Exception: pass
+        except Exception as _ex: print('WARNING hoop note NOT centred (fallback to the left):', repr(_ex))
         txt(_t, 'stirrup', _sx, ylow - LB.DET_TXT_DY)
     # stirrup elevation to the right: two halves facing each other
-    w = B - 6; xa = R + ST_X; xb = xa + w + ST_GAP; xe = xb + w; h = H - 6
+    w = B - 6; xa = R + ST_X; xb = xa + w + ST_GAP; xe = xb + w; h = H - 6; ey = 3.0       # ey = bottom edge of the stirrup elevation
     ELEV = n_st == 1
-    for (p, q) in (((xa, 3 + h), (xa + w, 3 + h)), ((xa, 3), (xa + w, 3)), ((xb, 3 + h), (xe, 3 + h)), ((xb, 3), (xe, 3)), ((xa, 3), (xa, 3 + h)), ((xe, 3), (xe, 3 + h))):
-        if ELEV: line(p, q, zi)
+    BELOW = OVERLAY and ELEV      # user 2026-10-25 (3600-CON-11): on an XREF the elevation beside the slab ran into the neighbouring XREF section -> it goes BENEATH its own section (top DET_TOP below the beam bottom, centred on the beam), the two labels under it
+    if BELOW: xa = B / 2 - (2 * w + ST_GAP) / 2; xb = xa + w + ST_GAP; xe = xb + w; ey = LB.DET_TOP - h
+    CLOSED = ELEV and H <= CLOSED_MAX_H      # user 2026-10-25: H up to 100 -> ONE closed stirrup beside the slab (as the staggered stirrups under a wide beam), above 100 -> the two halves
+    if CLOSED:
+        if BELOW: xa = B / 2 - w / 2
+        xe = xa + w; x1 = xe
+        msp.add_lwpolyline([P(q) for q in ((x1, ey + h), (xa, ey + h), (xa, ey), (x1, ey))], close=True, dxfattribs=dict(layer=zi))
+        line((x1 - LB.HOOK_DX, ey + h - LB.HOOK_DY1), (x1 - LB.HOOK_DX, ey + h), zi); line((x1, ey + h - LB.HOOK_DY2), (x1 - LB.HOOK_DX2, ey + h - LB.HOOK_DY2), zi)
+    else:
+        for (p, q) in (((xa, ey + h), (xa + w, ey + h)), ((xa, ey), (xa + w, ey)), ((xb, ey + h), (xe, ey + h)), ((xb, ey), (xe, ey)), ((xa, ey), (xa, ey + h)), ((xe, ey), (xe, ey + h))):
+            if ELEV: line(p, q, zi)
     Dm = LB.PROF['dim']; Bz = 'dim_25_BARZEL_Above'
     def dim(base, p1, p2, ang, text=None, style=None, layer=None, **kw):
         if OVERLAY and not style: return          # the XREF carries the section dims; the stirrup-detail (bar) dims keep their style
@@ -157,53 +178,65 @@ def draw(doc, B, D, H, ox, oy, name, tmpl, lab, centre_u, stirrups='standard', D
         if not style: kw['override'] = Dm['override']
         msp.add_linear_dim(**kw).render()
     dim((0, -18.2), (0, 0), (B, 0), 0, lab['B'])
-    dim((-88.0, 0), (0, 0), (0, H), 90, lab['H'])
-    dim((Lft - 14.4, yTl), (Lft, ySl), (Lft, yTl), 90, lab['D'])
-    dim((B + 76.8, yTr), (B + 58.9, ySr), (B + 58.9, yTr), 90, lab['D'])      # user 2026-10-21 (red cloud on 1-1): the RIGHT slab thickness dim measures at the slab end (B + 58.9), its line 17.9 beyond (B + 76.8)
+    dim((-88.0 if hasL else -56.2, 0), (0, 0), (0, H), 90, lab['H'])      # no slab on the left (free edge): nothing stands between the section and its height dim -> 56.2 (user 2026-10-25, korchakk 2-2: he moved the '50' 31.8 closer, 'too far from the section')
+    if hasL: dim((Lft - 14.4, yTl), (Lft, ySl), (Lft, yTl), 90, lab.get('Dl') or lab['D'])
+    if hasR: dim((B + 76.8, yTr), (B + 58.9, ySr), (B + 58.9, yTr), 90, lab.get('Dr') or lab['D'])      # user 2026-10-21 (red cloud on 1-1): the RIGHT slab thickness dim measures at the slab end (B + 58.9), its line 17.9 beyond (B + 76.8)
     # SIDE CHAINS (user 2026-10-22, his hand-dimensioned 2-2 = the model; also taught 2026-10-21): every side carries the FULL chain of vertical segments beam bottom -> slab soffit -> slab top -> beam top on the slab-thickness dim line
     # (left x = Lft - 14.4, right x = B + 76.8), the new segments measured at the beam face, text 4.5 outside the line (style default); a zero-length segment is not dimensioned. Identical sides (same D, same level) -> the RIGHT side complete,
     # the left keeps overall height + slab; different sides -> both complete. Symbolic H / D (untagged beams) -> no numeric chain.
-    if not (lab['H'] or lab['D']):
-        xL, xR = Lft - 14.4, B + 76.8; both = not (Dl == Dr and dl == dr)
+    symL, symR = bool(lab.get('Dl') or lab['D']), bool(lab.get('Dr') or lab['D'])      # a side whose thickness is the symbol H gets no numeric chain
+    if not lab['H'] and not (symL and symR):
+        xL, xR = Lft - 14.4, B + 76.8; both = not (Dl == Dr and dl == dr) or not (hasL and hasR)
         def seg(x, ya, yb, p1, p2): dim((x, ya), p1, p2, 90, location=P((x - 4.5, (ya + yb) / 2)))      # text centre 4.5 outside the line, mid-height (his 2-2: textmid = line x - 4.5)
-        if both:
+        if both and hasL and not symL:
             if ySl > 0.5: seg(xL, 0, ySl, (0, 0), (0, ySl))
             if dl > 0.5: seg(xL, yTl, H, (0, yTl), (0, H))
-        if ySr > 0.5: seg(xR, 0, ySr, (B, 0), (xR, ySr))                  # his 130: one point on the dim line, one on the beam-bottom corner; lower point FIRST (ezdxf puts the text on the wrong side of the line otherwise)
-        if dr > 0.5: seg(xR, yTr, H, (B, yTr), (B, H))
-    for (x0, x1) in (((xa, xa + w), (xb, xe)) if ELEV else ()):
-        dim((x1, 3 + h), (x0, 3 + h), (x1, 3 + h), 0, lab['B-6'], Bz, Ly['text']); dim((x1, 3), (x0, 3), (x1, 3), 0, lab['B-6'], Bz, Ly['text'])
+        if hasR and not symR:
+            if ySr > 0.5: seg(xR, 0, ySr, (B, 0), (xR, ySr))                  # his 130: one point on the dim line, one on the beam-bottom corner; lower point FIRST (ezdxf puts the text on the wrong side of the line otherwise)
+            if dr > 0.5: seg(xR, yTr, H, (B, yTr), (B, H))
+    for (x0, x1) in ((((xa, xa + w),) if CLOSED else ((xa, xa + w), (xb, xe))) if ELEV else ()):
+        if not CLOSED: dim((x1, ey + h), (x0, ey + h), (x1, ey + h), 0, lab['B-6'], Bz, Ly['text'])
+        dim((x1, ey), (x0, ey), (x1, ey), 0, lab['B-6'], Bz, Ly['text'])
     if ELEV:
-        dim((xa, 3 + h), (xa, 3), (xa, 3 + h), 90, lab['H-6'], Bz, Ly['text']); dim((xe, 3 + h), (xe, 3), (xe, 3 + h), 90, lab['H-6'], Bz, Ly['text'])
-        _hn = LB.stirrup_layout(B, stirrups)[2]; txt(_hn, 'st', xa - 1.9, 26.9); txt(_hn, 'st', xe - 2.9, 25.9)      # hoops: S $12@15, ST $12/14/16@15 (user 2026-10-21; was $8@15 of the generic example)
+        if not CLOSED: dim((xa, ey + h), (xa, ey), (xa, ey + h), 90, lab['H-6'], Bz, Ly['text'])
+        dim((xe, ey + h), (xe, ey), (xe, ey + h), 90, lab['H-6'], Bz, Ly['text'])
+        _hn = LB.stirrup_layout(B, stirrups)[2]; _hl = _hn if lab['H-6'] else f"{_hn} L={round(2 * (w + h) + 12)}"      # taught cast rule: one rectangle L = 2*(B-6 + H-6) + 12 (numeric H only; a symbolic height has no taught L)
+        _sx = xa - 1.9
+        try:                                  # ONE note, centred under the elevation, 12.6 under its bottom edge (user 2026-10-25, korchakk 1-1 / 4-4: he deleted the second '$12@15' and moved the note below the stirrups)
+            from shx_width import text_extent; _a, _b = text_extent(tmpl['st']['style'], _hl, 0.0, tmpl['st']['height'], tmpl['st'].get('width', 1.0)); _sx = (xa + xe) / 2 - (_a + _b) / 2
+        except Exception as _ex: print('WARNING stirrup note NOT centred (fallback to the left):', repr(_ex))
+        txt(_hl, 'st', _sx, ey - 12.6)        # hoops: S $12@15, ST $12/14/16@15 (user 2026-10-21; was $8@15 of the generic example)
     # level marker (arrow on the beam top, 'per plan') + title and scale
     if OVERLAY: return
-    if 'MH' in doc.blocks: msp.add_blockref('MH', P((2.8, H)), dxfattribs=dict(layer='58_HATAH_SIM', xscale=-1.0, yscale=1.0))
-    txt('kph ,fw', 'tp_cast', 2.0, H + 12.5, height=5.0, width=0.8)
+    _mh = MH_SHIFT if B >= MH_SHIFT_MIN_B else 0.0      # user 2026-10-24 (his hand edit of 17-17, B=170): the 'o.k per plan' marker + its note sit 18.3 right of the very corner, not on it (1 example; narrow beams keep the corner: UNVERIFIED)
+    if 'MH' in doc.blocks: msp.add_blockref('MH', P((2.8 + _mh, H)), dxfattribs=dict(layer='58_HATAH_SIM', xscale=-1.0, yscale=1.0))
+    txt('kph ,fw', 'tp_cast', 2.0 + _mh, H + 7.3, height=5.0, width=0.7); txt('/K/O', 'tp_cast', 2.0 + _mh, H + 14.3, height=5.0, width=0.7)      # 'o.k' over 'per plan' (user 2026-10-25, korchakk 1-1 cloud: he added the 'o.k' line and moved the per-plan line 5.2 down)
     T = LB.PROF['title']; st = T['scale_text']; cx = centre_u
     msp.add_text(T['prefix'] + LB.title_name(name), height=T['height'], dxfattribs=dict(layer=Ly['text'], style=T['style'], width=T['width'], text_generation_flag=T['text_generation_flag'], insert=P((cx + 8.9, H + 55.9))))
     msp.add_text(st['text'], height=st['height'], dxfattribs=dict(layer=Ly['text'], style=st['style'], width=st['width'], insert=P((cx - 26.7, H + 45.5))))
 
-def main():
+def main(argv=None, doc=None):
+    """argv / doc (batch use, star_plan): draw into the already open `doc` and do not save"""
     a = argparse.ArgumentParser(); a.add_argument('file'); a.add_argument('name'); a.add_argument('--profile', default='israeli-structural'); a.add_argument('--box', nargs=4, type=float, required=True)
     a.add_argument('--B', type=float, required=True); a.add_argument('--D', type=float, default=25.0); a.add_argument('--D-left', type=float); a.add_argument('--D-right', type=float); a.add_argument('--drop-left', type=float, default=0.0, help='beam top minus left slab top (cm)'); a.add_argument('--drop-right', type=float, default=0.0); a.add_argument('--H', type=float, default=MIN_H)
-    a.add_argument('--d-label', help="symbol (H) written on the slab thickness dims when the plan gives no D"); a.add_argument('--h-label', help="symbol written on the height dimensions instead of a number (user: 'h')"); a.add_argument('--labels', choices=['numeric', 'example'], default='numeric')
-    a.add_argument('--stirrups', choices=['standard', 'transfer'], default='standard', help='the user stirrup tables (transfer = a new element rises from the beam)'); a.add_argument('--detail', choices=['none', 'plan', 'ss'], default='none', help='S = as per plan, SS = X$XX notes'); a.add_argument('--replace', action='store_true'); a.add_argument('-o'); a.add_argument('--png'); a = a.parse_args(); LB.apply_profile(a.profile)
+    a.add_argument('--d-label', help="symbol (H) written on the slab thickness dims when the plan gives no D"); a.add_argument('--d-label-left', help='same, for the LEFT slab only (the right one has a plan marker)'); a.add_argument('--d-label-right', help='same, RIGHT slab only'); a.add_argument('--sides', choices=['both', 'left', 'right'], default='both', help='which sides carry a slab: the other is a FREE EDGE (beam face = slab edge)'); a.add_argument('--h-label', help="symbol written on the height dimensions instead of a number (user: 'h')"); a.add_argument('--labels', choices=['numeric', 'example'], default='numeric')
+    a.add_argument('--stirrups', choices=['standard', 'transfer'], default='standard', help='the user stirrup tables (transfer = a new element rises from the beam)'); a.add_argument('--detail', choices=['none', 'plan', 'ss'], default='none', help='S = as per plan, SS = X$XX notes'); a.add_argument('--replace', action='store_true'); a.add_argument('-o'); a.add_argument('--png'); a = a.parse_args(argv); LB.apply_profile(a.profile)
     B, D, H = a.B, a.D, a.H
     if a.labels == 'example': lab = {'B': 'B', 'H': 'H(min=40cm)', 'D': 'D', 'B-6': 'B-6', 'H-6': 'H-6'}
     else:
-        hs = a.h_label; lab = {'B': None, 'H': hs, 'D': a.d_label, 'B-6': None, 'H-6': (hs + '-6') if hs else None}
+        hs = a.h_label; lab = {'B': None, 'H': hs, 'D': a.d_label, 'B-6': None, 'H-6': (hs + '-6') if hs else None, 'Dl': a.d_label_left, 'Dr': a.d_label_right}
     bx0, by0, bw, bh = a.box; ox = bx0 + CELL_U0 - (B - 20) / 2; oy = by0 + CELL_V0
-    doc = ezdxf.readfile(a.file); tmpl = LB.template_texts(doc)
+    batch = doc is not None; doc = doc if batch else ezdxf.readfile(a.file); tmpl = LB.template_texts(doc)
     if a.replace:
         print('cleared', LB.clear_cell(doc, (bx0, by0, bx0 + bw, by0 + bh)), 'old entities'); T0 = LB.PROF['title']       # clear_cell keeps titles; this recipe writes its own
         for t in list(doc.modelspace().query('TEXT')):
             if bx0 < t.dxf.insert.x < bx0 + bw and by0 < t.dxf.insert.y < by0 + bh and t.dxf.layer == LB.PROF['layers']['text'] and (t.dxf.text.startswith(T0['prefix']) or t.dxf.text == T0['scale_text']['text']): doc.modelspace().delete_entity(t)
-    draw(doc, B, D, H, ox, oy, a.name, tmpl, lab, (B - 20) / 2 + 29.65 - 0.0, a.stirrups, a.D_left, a.D_right, a.drop_left, a.drop_right)
+    draw(doc, B, D, H, ox, oy, a.name, tmpl, lab, (B - 20) / 2 + 29.65 - 0.0, a.stirrups, a.D_left, a.D_right, a.drop_left, a.drop_right, a.sides)
     a.box = [bx0, by0, bw, bh]; LB.apply_detail(doc, a)
+    if batch: print(f'{a.name}: general beam B={B:g} H={H:g} D={D:g}'); return
     out = a.o or a.file
     if out == a.file: LB.backup(a.file, 'genbeam-' + a.name)
-    doc.saveas(out); print('saved', out, '| audit errors', len(ezdxf.readfile(out).audit().errors)); print(f'{a.name}: general beam B={B:g} H={H:g} D={D:g}')
+    doc.saveas(out); print('saved', out, '| audit errors', DL.audit_saved(out)); print(f'{a.name}: general beam B={B:g} H={H:g} D={D:g}')
     if a.png: LB.render_png(doc, (ox - 90, ox + B + 150, oy - 40, oy + H + 80), a.png)
 
 if __name__ == '__main__': main()

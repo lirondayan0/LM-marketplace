@@ -2,7 +2,7 @@
   python cut_crossings.py FILE --box X0 Y0 X1 Y1
 For every pair of `hat` marks (same attribute) inside the box prints the distance along the cut (from the first mark) of every crossing line on the plan layers:
   93_KORA = beam face, 0_LUHADIM_SHEN = hollow-core panel edge (15 inside a face = LEDGE on that side), 15_DASHED = wall above.
-Reading (conventions/section-drawings.md, 'Update 2026-10-18'): KORA pair = beam width; one LUH = ledge on that side and the other side is the solid casting completion;
+Reading (conventions/sections-reading.md, sections 1-2): KORA pair = beam width; one LUH = ledge on that side and the other side is the solid casting completion;
 view parallel to the panel span (plan_cuts CORES) = cast beam with circles. Compare with the drawn section (dims: B, ledge 15, sides)."""
 import argparse, math, os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

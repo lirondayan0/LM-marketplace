@@ -1,4 +1,4 @@
-"""Audit of the user's dimension-line rules on one plan box (read-only). Rules (user, 2026-10-13, conventions/plan-dimensions.md):
+"""Audit of the user's dimension-line rules on one plan box (read-only). Rules (user, 2026-10-13, conventions/plan-dimensions.md principles 3-6):
   1 each line is continuous from the beginning to the end of the plan (no gaps / overlaps between items, spans the plan),
   2 a line states the elements of ONE side only (all measured points on one side of the line, line just outside that row),
   3 every element that intersects the line is dimensioned by it (each crossing coincides with a dim break),

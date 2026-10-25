@@ -3,7 +3,7 @@
 (X, Y) = point on the beam's centre line where the cut crosses it; --view = direction the section LOOKS (rot 270 E, 90 W, 0 N, 180 S; see scripts/plan_cuts.py).
 The new pair is a COPY of an existing pair with the same view (insert, rotation, mirror, layer, attribute style), moved to the beam and renumbered, so it matches the
 user's marks exactly; the two marks sit on both sides of the beam at +-max(81, B/2 + 70) from the centre line (fits the user's pairs within ~6: 25 wall -> 81, 30/65 -> ~92, 65/65 -> ~97, 80/65 -> ~109).
-Which section number / view a beam needs: scripts/plan_cuts.py (panel span vs cut direction) + conventions/section-drawings.md. Writes a timestamped snapshot first."""
+Which section number / view a beam needs: scripts/plan_cuts.py (panel span vs cut direction) + conventions/sections-reading.md + sections-workflow.md. Writes a timestamped snapshot first."""
 import argparse, os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'scripts'))
 from dxflib import *

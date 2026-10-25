@@ -10,7 +10,7 @@ import glob, math, os, struct
 
 FONT_DIRS = [os.path.expanduser('~/.claude/skills/dxf-drafting/fonts'), 'C:/Windows/Fonts',
              'C:/Program Files/Autodesk/*/Fonts', '/tmp/cop*.tmp/Fonts']
-FILES = {'MIRYL': 'MIRYL.shx', 'SIVAN': 'sivan_m.shx', 'HEBREW_NEW': 'hebtxt 500.shx'}
+FILES = {'MIRYL': 'MIRYL.shx', 'SIVAN': 'sivan_m.shx', 'HEBREW_NEW': 'hebtxt 500.shx', 'HEBTXT': 'hebtxt 500.shx'}      # HEBTXT = the template's style for $ notes before sivan_text.py turns them into HEBREW_NEW: SAME font; the KeyError made the hoop-note centring fall back to the left (netivot 2026-10-24)
 _DIR8 = [(1, 0), (1, .5), (1, 1), (.5, 1), (0, 1), (-.5, 1), (-1, 1), (-1, .5), (-1, 0), (-1, -.5), (-1, -1), (-.5, -1),
          (0, -1), (.5, -1), (1, -1), (1, -.5)]
 _cache = {}

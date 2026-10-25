@@ -4,7 +4,7 @@ in a target cell, following the user's ground-floor examples (frame at x~113146:
 --replace first deletes what an earlier run / section_outline drew in the cell (lines, polylines, dims, o.k marker; keeps the cell frame, titles, user markup).
 All geometry is relative to the beam's bottom-left corner; numbers marked (ex 2-2) were measured on that example and reproduced by `--selftest`.
 Choose the kind with `scripts/plan_cuts.py`: cut looking ALONG the panel span -> `--kind cast` (cores as circles, panels do not bear on the beam); cut perpendicular to the span -> `--kind ledge` (panels lengthwise on the ledges).
-Rules + evidence: ../conventions/section-drawings.md ('Hollow-core beam section'). Bar COUNTS follow max-spacing rules inferred from the examples (UNVERIFIED)."""
+Rules + evidence: ../conventions/sections-drawing.md (sections 1-2, 8). Bar COUNTS follow max-spacing rules inferred from the examples (UNVERIFIED)."""
 import argparse, math, os, shutil, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'scripts'))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))      # leader_fit (python -I drops the script dir)
@@ -68,8 +68,8 @@ def build(W, H, S, T, sides, S_left=None, S_right=None, solid=None, SD=0.0, drop
     if left: dashed += [[(xs0, hl + 3), (xl, hl + 3)], [(xs0, ysL - 3), (xl, ysL - 3)]]; mesh.append([(xs0 + 3, H - drop_left - 3), (xl, H - drop_left - 3)])
     if right: dashed += [[(xs1, hr + 3), (xr, hr + 3)], [(xs1, ysR - 3), (xr, ysR - 3)]]; mesh.append([(xs1 - 3, H - drop_right - 3), (xr, H - drop_right - 3)])
     bars = []
-    if solid:      # slab bars: continuous rebar layer (57_HATAH_ZIUN), anchored into the stem by ~D (user's hand edit of 3-3 / 4-4, 2026-10-15: 27.9 and 31.8 for D=30; UNVERIFIED: D or the stirrup width)
-        anc = min(SD, W - 3); anb = min(60.0, W - 3)      # bottom bar 60 into the beam (user 2026-10-21, 3-3)
+    if solid:      # slab bars: continuous rebar layer (57_HATAH_ZIUN), both 60 into the stem (2026-10-24; the ~D anchor of his 2026-10-15 hand edit is superseded)
+        anc = anb = min(60.0, W - 3)      # BOTH bars 60 into the beam (user 2026-10-21 bottom, 3-3; 2026-10-24 'a solid slab beside a beam: its reinforcement extends 60 into the beam' - replaces the ~D top anchor of his 2026-10-15 hand edit)
         for yy in (yS + 3, yTop - 3):
             a_ = anb if yy == yS + 3 else anc
             bars.append([(a_, yy), (xl, yy)] if solid == 'left' else [(W - a_, yy), (xr, yy)])
@@ -134,15 +134,22 @@ OVERLAY = False                  # user 2026-10-22: sections over a Revit XREF -
 SOLID_SYM = None                 # user 2026-10-18: solid slab with NO thickness on the plan -> its thickness dimension carries the symbol 'H' (drawn at --solid-D)
 H_SYM = None                     # untagged beam (user 2026-10-15): the height is the PARAMETER h - height dimensions carry the symbol ('h', 'h-6', 'h-25') instead of a number, no L= lengths
 BARZEL_STYLE = 'dim_25_BARZEL'   # steel-bar style: text only (no dim line, arrows or extension lines) written ON the bar (user's final rule, round 4: ALL detail dims)
+BARZEL_FALLBACK = 'dim_25_BARZEL_Above'   # preferred since shlang 2026-10-24: the plan file had NO 'dim_25_BARZEL' -> ezdxf fell back to Standard (text 2.5, normal dim) in 147 stirrup dims; the user fixed one by hand to this style (text 6, green, ON the bar)
+
+def barzel_style(msp):
+    names = {s.dxf.name for s in msp.doc.dimstyles}
+    for n in (BARZEL_FALLBACK, BARZEL_STYLE):      # his hand fix 2026-10-24 chose the Above style (identical to dim_25_BARZEL apart from the text font): newest wins, as general_beam already does
+        if n in names: return n
+    print(f'WARNING: neither {BARZEL_STYLE} nor {BARZEL_FALLBACK} exists in the file - bar dims fall back to Standard (wrong text size)'); return BARZEL_STYLE
 
 def dim_w_barzel(msp, P, x0, x1, y_edge, layer):
     """Width of a bar written ON its horizontal edge (text above the edge): U stirrups on their top edge, tall stirrups on their bottom edge (user's 3-3)."""
-    msp.add_linear_dim(base=P((x0, y_edge)), p1=P((x0, y_edge)), p2=P((x1, y_edge)), angle=0, dimstyle=BARZEL_STYLE, dxfattribs={'layer': layer}).render()
+    msp.add_linear_dim(base=P((x0, y_edge)), p1=P((x0, y_edge)), p2=P((x1, y_edge)), angle=0, dimstyle=barzel_style(msp), dxfattribs={'layer': layer}).render()
 
 def dim_leg_barzel(msp, P, x, y0, y1, side, layer, text=None):
     """Length of a vertical bar leg written ON the leg (style dim_25_BARZEL, aligned, no arrows). side='east'/'west' = which side the text sits (outside of a closed edge)."""
     a, b = ((x, y1), (x, y0)) if side == 'east' else ((x, y0), (x, y1))      # the text goes to the left of the direction of measurement
-    kw = dict(p1=P(a), p2=P(b), distance=0, dimstyle=BARZEL_STYLE, dxfattribs={'layer': layer}); kw.update({'text': text} if text else {}); msp.add_aligned_dim(**kw).render()
+    kw = dict(p1=P(a), p2=P(b), distance=0, dimstyle=barzel_style(msp), dxfattribs={'layer': layer}); kw.update({'text': text} if text else {}); msp.add_aligned_dim(**kw).render()
 
 def draw_details(doc, tmpl, ox, oy, tall, U_left, U_right, H, hbL, hbR, W, dims_only=False):
     """Stirrup detail row under a ledge-beam section (user's 3-3): tall stirrups (staggered rectangles), U stirrups for the ledges, each with dims and note.
@@ -284,10 +291,14 @@ def core_row(x0, sg, H, D, T):
 def obround(msp, cx, cy, W, Hh, layer, P=lambda q: q):
     """closed stadium polyline (vertical, semicircle ends), width W, height Hh, centre (cx, cy)"""
     r, L = W / 2, Hh / 2 - W / 2
+    if layer == CORE_LAYER:                       # shlang 2026-10-24: the plan's own layer was white (7); the user recoloured it by hand. Office colour = green ACI 3 (office-standards.md)
+        lay = msp.doc.layers.get(layer) if layer in msp.doc.layers else msp.doc.layers.add(layer)
+        if lay.dxf.color != 3: lay.dxf.color = 3
     pts = [(cx + r, cy - L, 0), (cx + r, cy + L, 1), (cx - r, cy + L, 0), (cx - r, cy - L, 1)]
     return msp.add_lwpolyline([(*P((x, y)), 0, 0, bg) for x, y, bg in pts], format='xyseb', close=True, dxfattribs=dict(layer=layer))
 
 
+WIDE_MESH_N, WIDE_ROW_STEP = 3, 5.9      # B > 30 cast beam: topping mesh dots per side, max step of the top / bottom rows across the width (shlang 16-16)
 CAST_SLAB_END, CAST_SLAB_DOT0, CAST_SLAB_STEP, CAST_VSTEP = 58.9, 9.9, 15.0, 20.0   # slab shown beyond the stem face; first slab dot from the stem face; steps (ex 1-1)
 
 def draw_stem_stirrups(msp, P, B, H, n, w, layer='57_HATAH_ZIUN', closed_top=True):
@@ -312,14 +323,20 @@ def build_cast(B, H, D, T=5.0, both=False, D_left=None, none=False, solid_D=0.0)
     DL = D_left or D; Dmax = max(D, DL) if both else D
     y2, yt = H - Dmax + CAST_BOT2, H - CAST_TOP; xl, xr = CAST_COL_L, B - CAST_COL_R; end = B + CAST_SLAB_END; endL = -CAST_SLAB_END if (both or solid_D) else 0.0
     n = max(1, math.ceil((y2 - INSET_BAR) / CAST_VSTEP - 1e-9)) + 1
-    col_y = lin(INSET_BAR, y2, n) + [yt]
-    dots = [(x, y) for x in (xl, xr) for y in col_y] + [(B + 7.4 + 20.0 * k, H - 4) for k in range(2)]     # user's 1-1: 2 topping mesh dots, no slab dot rows
+    col_y = lin(INSET_BAR, y2, n); pitch = (y2 - INSET_BAR) / (n - 1) if n > 1 else CAST_VSTEP
+    extra = []       # shlang 16-16 (user's red clouds 2026-10-24): the face column must reach the top row - a gap above the soffit-level dot wider than 1.5 x pitch gets side bars, evenly (80x120, D 47: gap 38.3 = 2.1 x pitch -> 1 bar, spacing 19.2; his column 18.4)
+    if yt - y2 > 1.5 * pitch: k = max(1, round((yt - y2) / pitch) - 1); extra = [y2 + (yt - y2) * i / (k + 1) for i in range(1, k + 1)]
+    mid_y = col_y[1:-1] + extra; col_y = col_y + extra + [yt]
+    dots = [(x, y) for x in (xl, xr) for y in col_y] + [(B + 7.4 + 20.0 * k, H - 4) for k in range(WIDE_MESH_N if B > 30 else 2)]     # user's 1-1: 2 topping mesh dots (3 on a wide beam, shlang 16-16), no slab dot rows
+    if B > 30:       # WIDE cast beam: top and bottom rows run ACROSS the width (shlang 16-16, his hand version: B 80 -> 13 dots each, step 5.94; the bottom row at the TOP step, not 10.15 - 1 example, ? ask)
+        span = xr - xl; m = max(1, math.ceil(span / (WIDE_ROW_STEP * 1.01) - 1e-9))
+        dots += [(xl + span * i / m, y) for y in (yt, INSET_BAR) for i in range(1, m)]
     cores = core_row(B, 1, H, D, T)                                                                         # 3 cores r=5, 20 apart (user's 1-1); thicker panel -> bigger cores
     if solid_D:      # SOLID slab on the side opposite the hollow-core one (user 2026-10-18, 7-7: 'casting completion'); dot rows as the solid slab of the ledge sections
         dots += [(-(SOLID_DOT0 + SOLID_DOT_STEP * k), yy) for k in range(SOLID_DOT_N) for yy in (H - SOLID_TOP_IN, H - solid_D + SOLID_SOFFIT_IN)]
     if both:
-        dots += [(-7.4 - 20.0 * k, H - 4) for k in range(2)]; cores += core_row(0, -1, H, DL, T)
-    return dict(solid=(dict(SD=solid_D, yS=H - solid_D) if solid_D else None), B=B, H=H, D=D, DL=DL, T=T, both=both, none=False, y2=y2, yt=yt, xl=xl, xr=xr, end=end, endL=endL, col_y=col_y, dots=sorted(set(dots)), mid_y=col_y[1:-2], cores=cores)
+        dots += [(-7.4 - 20.0 * k, H - 4) for k in range(WIDE_MESH_N if B > 30 else 2)]; cores += core_row(0, -1, H, DL, T)
+    return dict(solid=(dict(SD=solid_D, yS=H - solid_D) if solid_D else None), B=B, H=H, D=D, DL=DL, T=T, both=both, none=False, y2=y2, yt=yt, xl=xl, xr=xr, end=end, endL=endL, col_y=col_y, dots=sorted(set(dots)), mid_y=mid_y, cores=cores)
 
 def draw_free_beam(doc, g, ox, oy, tmpl):
     """Free (cast) beam, no slab beside it: outline, stirrup B-6 x H-6 with hook, two bar columns, `2$12` top pair, `2$12` bottom pair, stirrup note, dims B and H, stirrup detail below.
@@ -372,9 +389,9 @@ def draw_cast(doc, g, ox, oy, tmpl, mirror=False):
     line((B - 3, H - 3), (end, H - 3), '57_HATAH_ZIUN')                                                     # topping mesh line
     if both: line((3, H - 3), (endL, H - 3), '57_HATAH_ZIUN')
     n_s, w_s, _, _ = stirrup_layout(B, STIRRUPS); draw_stem_stirrups(msp, P, B, H, n_s, w_s)          # the table's stirrups inside the section (standard 65 -> 2 x 40)
-    if sol:          # slab bars on the continuous rebar layer, anchored into the stem by ~D (as the ledge sections' solid slab)
-        anc = min(sol['SD'], B - 3)
-        for yy in (sol['yS'] + 3, H - 3): line((min(60.0, B - 3) if yy == sol['yS'] + 3 else anc, yy), (endL, yy), '57_HATAH_ZIUN')      # bottom bar 60 into the beam (user 2026-10-21)
+    if sol:          # slab bars on the continuous rebar layer, BOTH 60 into the beam (user 2026-10-21 bottom, 2026-10-24 'solid slab beside a beam: its reinforcement extends 60 into the beam')
+        anc = min(60.0, B - 3)
+        for yy in (sol['yS'] + 3, H - 3): line((min(60.0, B - 3) if yy == sol['yS'] + 3 else anc, yy), (endL, yy), '57_HATAH_ZIUN')
     for x, y in g['dots']: add_dot(msp, *P((x, y)), '57_HATAH_ZIUN')
     def txt(raw, key, x, y, span=None):
         a = dict(tmpl[key])
@@ -422,6 +439,7 @@ def draw_cast(doc, g, ox, oy, tmpl, mirror=False):
 
 def template_texts(doc):
     """Copy style/height/width of the example's note texts (found by their raw text inside the profile's examples_box) so new notes match."""
+    ensure_section_standards(doc)      # user 2026-10-24: a layer / dim style / block the plan lacks is brought in from the office standard (dxflib.ensure_standards)
     ex0, ey0, ex1, ey1 = PROF.get('examples_box', [0, 0, 1e12, 1e12])
     want = {'stirrup': '&12@20', 'bt': 'c/,/ kph ,fbh,', 'tp': 'c/g/ kph ,fbh,', 'pp': ' kph ,fbh,'}
     want_cast = {'c4': '4&12', 'c2': '2&12', 'c28': '2&8@20', 'st': '&10@15', 'bt_cast': 'c/,/ kph ,fw', 'tp_cast': 'c/g/ kph ,fw'}
@@ -475,13 +493,14 @@ def clear_cell(doc, box):
         elif t in ('LINE', 'LWPOLYLINE', 'CIRCLE', 'LEADER') or (t == 'INSERT' and (e.dxf.name in ('o.k block', 'dot barzel', 'MH') or e.dxf.name.startswith('*U'))): msp.delete_entity(e); n += 1     # user 2026-10-22: stale 'dot barzel' dots + LEADERs of an earlier draw gave a DOUBLE reinforcement     # incl. anonymous blocks of hand-made stirrup details
     return n
 
-def main():
+def main(argv=None, doc=None):
+    """argv / doc (batch use, star_plan): draw into the already open `doc` and do not save (see run)"""
     a = argparse.ArgumentParser(); a.add_argument('file'); a.add_argument('name'); a.add_argument('--profile', default='israeli-structural')
     a.add_argument('--box', nargs=4, type=float, help='X0 Y0 W H of the target cell'); a.add_argument('--cell', help="N (1-based, left to right) or 'auto' (first free cell): take the box from the user's white cells instead of --box"); a.add_argument('--beam', nargs=2, type=float, required=True)
     a.add_argument('--slab', type=float, required=True, help='ledge kind: hollow-core thickness; cast kind: total slab D'); a.add_argument('--topping', type=float, default=0); a.add_argument('--slab-left', type=float); a.add_argument('--slab-right', type=float); a.add_argument('--sides', choices=['both', 'right', 'left', 'none'], default='right'); a.add_argument('--kind', choices=['ledge', 'cast'], default='ledge', help='ledge = hollow-core on ledges (ex 2-2 / 5-5); cast = cast L edge beam (ex 1-1)')
     a.add_argument('--identical', type=int, help='N beams share this section: writes the note זהה ל-N קורות under the scale text'); a.add_argument('--h-label', help="untagged beam: write this SYMBOL (e.g. 'h') on the height dimensions instead of numbers"); a.add_argument('--solid', choices=['left', 'right'], help='SOLID (cast) slab on the side without a ledge (plan label D=nn without +topping)'); a.add_argument('--solid-D', type=float, default=0.0); a.add_argument('--solid-label', help="symbol (e.g. 'H') written on the solid slab's thickness dimension instead of the number"); a.add_argument('--solid-drop', type=float, default=0.0, help='level step: solid slab top this far BELOW the beam top (hollow slab level - solid slab level)'); a.add_argument('--stirrups', choices=['standard', 'transfer'], default='standard', help="stirrup table: standard beams (Φ12@15) or TRANSFER beams (carry a new element rising from them; Φ12/14/16@15)")
     a.add_argument('--detail', choices=['none', 'plan', 'ss'], default='none', help="none = the full example detail; plan = S mark (as per plan); ss = SS mark (engineer chooses)"); a.add_argument('--replace', action='store_true'); a.add_argument('--dims-only', action='store_true', help='only redraw the stirrup-detail dimensions (keeps everything else, e.g. the user\'s hand edits)'); a.add_argument('-o'); a.add_argument('--dry', action='store_true'); a.add_argument('--png')
-    a = a.parse_args(); apply_profile(a.profile); a.note = ('זהה ל-%d קורות' % a.identical) if a.identical and a.identical > 1 else None; run(a)
+    a = a.parse_args(argv); apply_profile(a.profile); a.note = ('זהה ל-%d קורות' % a.identical) if a.identical and a.identical > 1 else None; run(a, doc)
 
 def run(a, doc=None):
     """Draw one section described by the argparse-like namespace `a` (see main). doc given: draw into that open document and do not save (batch use, see recipes/plan_sections.py)."""
@@ -515,7 +534,7 @@ def run(a, doc=None):
         draw_details(doc, tmpl, ox, oy, g['tall'], g['left'], g['right'], H, g['hbL'], g['hbR'], W, dims_only=True); print('restyled detail dims, removed', n)
         out = a.o or a.file
         if out == a.file: backup(a.file, 'ledge-' + a.name)
-        doc.saveas(out); print('saved', out, '| audit errors', len(ezdxf.readfile(out).audit().errors)); return
+        doc.saveas(out); print('saved', out, '| audit errors', audit_saved(out)); return
     print(f"{a.name}: beam {W:.0f}x{H:.0f}, hollow-core {a.slab:.0f} + topping {a.topping:.0f}, slab {a.sides}; below ledge {g['hb']:.0f}; dots {len(g['dots'])} (bottom {len(g['rows']['bot'])}, top {len(g['rows']['top'])}); stem stirrups {len(g['tall'])}")
     if a.dry: return
     nosave = doc is not None; doc = doc or ezdxf.readfile(a.file); a.nosave = nosave; tmpl = template_texts(doc)
@@ -614,7 +633,7 @@ def finish(doc, a, ox, oy, W, H, centre, tipx):
     if getattr(a, 'nosave', False): return
     out = a.o or a.file
     if out == a.file: backup(a.file, 'ledge-' + a.name)
-    doc.saveas(out); print('saved', out, '| audit errors', len(ezdxf.readfile(out).audit().errors))
+    doc.saveas(out); print('saved', out, '| audit errors', audit_saved(out))
     if a.png: render_png(doc, (ox + centre - 190, ox + centre + 190, oy - 50, oy + H + 100), a.png)
 
 if __name__ == '__main__': main()

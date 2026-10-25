@@ -5,7 +5,7 @@ Install: `pip install ezdxf matplotlib`. Python on this machine: `python`. Alway
 ## Read / write
 ```python
 doc = ezdxf.readfile(path); msp = doc.modelspace()      # damaged file: from ezdxf import recover; doc, aud = recover.readfile(path)
-shutil.copy2(path, os.path.splitext(path)[0] + '.bak')  # backup first
+dxflib.backup(path, 'tag')                              # timestamped snapshot first (recipes do it; FILE.bak alone is not a baseline)
 doc.saveas(path)                                        # update original in place (user's rule)
 aud = doc.audit(); aud.errors                           # structural check after writing
 ```
@@ -53,8 +53,7 @@ Use to bring layers/styles/blocks (e.g. from `שכבות.dxf`) into a target fil
 ## Render
 `dxflib.render_png(doc, (x0,x1,y0,y1), out)` — matplotlib backend. SHX Hebrew shows as mirrored Latin gibberish; that is the renderer, not the file. Warning "Ignoring fixed y limits…" is harmless. Render a small region (≈ element ± margin) so details are legible.
 
-## Windows shell
-`python - <<'EOF'` heredocs break when the code contains quote characters and Hebrew in Git Bash; write scripts with the Write tool into the scratchpad and run them. Hebrew file names work fine when passed as arguments.
+Shell / scripting traps (heredocs, PowerShell BOM, accoreconsole): `pitfalls.md` group C. Hebrew file names work fine when passed as arguments.
 
 ## Dimensions on bars (rebar shapes), 2026-10-06
 - Text-only dimension = a dimstyle with dimsd1/dimsd2/dimse1/dimse2 = 1 and dimblk `_None` (office style `dim_25_BARZEL`). `msp.add_aligned_dim(p1, p2, distance=0, dimstyle=...)` puts the line ON the bar; the text is on the left of p1->p2, so swap the points to change the side.
@@ -63,4 +62,5 @@ Use to bring layers/styles/blocks (e.g. from `שכבות.dxf`) into a target fil
 - Reading `dimtype`: 32 = block-exclusive flag; 33 aligned, 161 aligned with moved text, 0/32 linear. A dim's rendered text is in its geometry block (`virtual_entities()`).
 - Deleting a dimension: also delete its anonymous geometry block (`doc.blocks.delete_block(name, safe=False)`).
 
-- Linear dim text: `location=` is the exact text midpoint (measured); without it the text sits 18 from the line (dimtad=1), but 23 for items narrower than the text. To control overlaps always pass `location`. Rotated (angle 90) dims put the default on the LEFT (-18).
+- Linear dim text placement (`location=`, default offsets, split lines): `pitfalls.md` group D - always pass `location` to control overlaps.
+- Rotated linear dim: `add_linear_dim(base=<point on the line>, p1, p2, angle=deg, location=<text centre>)`; re-place a text later with `DimStyleOverride(dim).set_location(loc, leader=False, relative=False)` + `.render()`.
