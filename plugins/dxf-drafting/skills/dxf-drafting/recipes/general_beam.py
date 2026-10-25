@@ -21,7 +21,8 @@ CELL_U0, CELL_V0 = 179.7, 248.8                 # beam origin inside the 400 x 4
 MIN_H = 40.0                                    # 'H(min=40cm)' of the 6-6 label
 
 BOTTOM_BAR_INTO_BEAM = 60.0
-MH_SHIFT, MH_SHIFT_MIN_B = 18.3, 60.0
+MH_X = 5.0                                      # level marker stem: 5 right of the beam's left face (user 2026-10-25), every beam width; its texts end 0.8 left of the stem
+MH_SHIFT, MH_SHIFT_MIN_B = 0.0, 60.0
 OVERLAY = False   # user 2026-10-22: section over a Revit XREF - reinforcement only (no outline, breaks, dims of the section, level marker, title)
 RESTRAINT_MESH = False   # user 2026-10-22 (later): 'there is no restraint grid in the ceilings' - REMOVED from cross-sections; code kept, switch on only if he asks again
 THICK_D = 60.0     # threshold of the restraint mesh, used ONLY if RESTRAINT_MESH is switched on (it is off: user 2026-10-22 'no restraint grid in the ceilings'); the thick FREE edge (slab_edge.draw_thick) has no mesh either since 2026-10-24 (slab_edge.FREE_EDGE_MESH)
@@ -209,8 +210,8 @@ def draw(doc, B, D, H, ox, oy, name, tmpl, lab, centre_u, stirrups='standard', D
     # level marker (arrow on the beam top, 'per plan') + title and scale
     if OVERLAY: return
     _mh = MH_SHIFT if B >= MH_SHIFT_MIN_B else 0.0      # user 2026-10-24 (his hand edit of 17-17, B=170): the 'o.k per plan' marker + its note sit 18.3 right of the very corner, not on it (1 example; narrow beams keep the corner: UNVERIFIED)
-    if 'MH' in doc.blocks: msp.add_blockref('MH', P((2.8 + _mh, H)), dxfattribs=dict(layer='58_HATAH_SIM', xscale=-1.0, yscale=1.0))
-    txt('kph ,fw', 'tp_cast', 2.0 + _mh, H + 7.3, height=5.0, width=0.7); txt('/K/O', 'tp_cast', 2.0 + _mh, H + 14.3, height=5.0, width=0.7)      # 'o.k' over 'per plan' (user 2026-10-25, korchakk 1-1 cloud: he added the 'o.k' line and moved the per-plan line 5.2 down)
+    if 'MH' in doc.blocks: msp.add_blockref('MH', P((MH_X + _mh, H)), dxfattribs=dict(layer='58_HATAH_SIM', xscale=-1.0, yscale=1.0))
+    txt('kph ,fw', 'tp_cast', MH_X - 0.8 + _mh, H + 7.3, height=5.0, width=0.7); txt('/K/O', 'tp_cast', MH_X - 0.8 + _mh, H + 14.3, height=5.0, width=0.7, style='SIVAN', text_generation_flag=2)      # 'o.k' over 'per plan' (user 2026-10-25, korchakk 1-1 cloud: he added the 'o.k' line and moved the per-plan line 5.2 down)
     T = LB.PROF['title']; st = T['scale_text']; cx = centre_u
     msp.add_text(T['prefix'] + LB.title_name(name), height=T['height'], dxfattribs=dict(layer=Ly['text'], style=T['style'], width=T['width'], text_generation_flag=T['text_generation_flag'], insert=P((cx + 8.9, H + 55.9))))
     msp.add_text(st['text'], height=st['height'], dxfattribs=dict(layer=Ly['text'], style=st['style'], width=st['width'], insert=P((cx - 26.7, H + 45.5))))

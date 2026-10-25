@@ -34,3 +34,7 @@ Model, status and TODO list: `conventions/sections-xref.md` section 6 (app v1.1.
 - 3600-CON-11 Sec 11 / 27 (slab on one side) are drawn since 2026-10-25 as edge beams (UNVERIFIED, wait for his clouds); Sec 25 (slab STEP 50 / 25, no beam) is drawn since 2026-10-25 by the parametric `slab_step` (UNVERIFIED beyond his 70 / 25: wait for his clouds).
 
 - Open question (2026-10-25): in test_sections 2-2 (south edge beam, view W) he crossed out the RIGHT slab (= the north, inside the building); the plan says the free side is the south = LEFT. Which does he mean (wrong cross, or a different reading of the arrows)?
+
+- RESOLVED 2026-10-25: marker stem 5 right of the face, slid right only when it would touch other text / leaders (user's answer to the test_sections (6) nudges).
+
+- Open (2026-10-25): shlang original, current code: bar_arrays refuses ('dot positions changed', greedy match fails after AutoCAD arrays; rows with dots 0.3 apart in y, cell 2 / right-hand cells) so the dots stay loose; the same file passed in the 20:37 app job and in skill 1.1.1. Not caused by edge-beam / closed-stirrup / clockwise changes alone (each switched off separately still fails). Investigate same_dots (greedy matching) before the next release.

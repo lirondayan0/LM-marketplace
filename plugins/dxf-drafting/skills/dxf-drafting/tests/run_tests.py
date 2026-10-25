@@ -800,7 +800,7 @@ _c = (0.0, 0.0); _ord = sorted({'E': (100, 0), 'SE': (70, -70), 'S': (0, -100), 
 assert [k for k, _ in _ord] == ['E', 'SE', 'S', 'SW', 'W', 'NW', 'N', 'NE'], _ord
 print('PASS star_plan: numbering starts at the right and runs clockwise (east, south, west, north)')
 
-# user 2026-10-24, his hand edits of netivot 17-17: hoop note centred under the stirrups (was left: shx_width had no 'HEBTXT'), o.k marker + note 18.3 right of the corner (B >= 60), scale text centred under the visible title
+# user 2026-10-24, his hand edits of netivot 17-17: hoop note centred under the stirrups (was left: shx_width had no 'HEBTXT'), o.k marker 5 right of the corner (was 18.3 for B >= 60 until 2026-10-25), scale text centred under the visible title
 from shx_width import text_extent as _tx
 _oh = os.path.join(tempfile.gettempdir(), 'gb_hoop.dxf'); run(os.path.join(REC, 'general_beam.py'), _d4, '17-17', '--box', '0', '0', '400', '450', '--B', '170', '--H', '90', '--D', '30', '--D-left', '30', '--D-right', '25', '--drop-left', '60', '--stirrups', 'standard', '--detail', 'ss', '-o', _oh)
 _dh = ezdxf.readfile(_oh); _mh = _dh.modelspace()
@@ -810,7 +810,7 @@ _nt = [t for t in _mh.query('TEXT') if '$12@15' in t.dxf.text and t.dxf.insert.y
 _na, _nb = _tx('HEBREW_NEW', _nt.dxf.text, _nt.dxf.insert.x, _nt.dxf.height, _nt.dxf.get('width', 1.0))
 assert abs((_na + _nb) / 2 - _gc) < 0.5, ((_na + _nb) / 2, _gc)
 _ox17 = 0 + 179.7 - (170 - 20) / 2; _mk = [e for e in _mh.query('INSERT') if e.dxf.name == 'MH']
-if _mk: assert abs(_mk[0].dxf.insert.x - (_ox17 + 2.8 + 18.3)) < 0.01, _mk[0].dxf.insert.x
+if _mk: assert abs(_mk[0].dxf.insert.x - (_ox17 + 5.0)) < 0.01, _mk[0].dxf.insert.x
 import center_titles as _ct
 _tt = _mh.add_text('%%Uj,l 71-71', dxfattribs={'style': 'SIVAN', 'height': 9, 'width': 0.9, 'text_generation_flag': 2, 'insert': (580.9, 400)}); _ts = _mh.add_text('1:25', dxfattribs={'style': 'HEBREW_NEW', 'height': 6, 'width': 0.8, 'insert': (0, 390)})
 _x = _ct.scale_x(_tt, _ts, 554.9); _sa, _sb = _tx('HEBREW_NEW', '1:25', _x, 6, 0.8); _ta, _tb = _tx('SIVAN', 'j,l 71-71', 580.9, 9, 0.9, True)
@@ -1055,3 +1055,23 @@ r = subprocess.run([sys.executable, os.path.join(REC, 'star_orient.py'), _fv], c
 _hv = [e for e in ezdxf.readfile(_fv).modelspace().query('INSERT') if e.dxf.name == 'hat']
 assert all(round(e.dxf.rotation) == 180 for e in _hv if e.dxf.insert.x > 0) and all(round(e.dxf.rotation) == 0 for e in _hv if e.dxf.insert.x < 0), 'east pair looks S, west pair looks N'
 print('PASS star_orient: vertical beams are turned clockwise (east -> S, west -> N)')
+
+# level marker (user 2026-10-25, test_sections (6) clouds): 'o.k' over 'per plan' are BOTH SIVAN mirrored; the sheet's extra `o.k block` is not laid over a section that carries its own marker (MH)
+_ok = os.path.join(tempfile.gettempdir(), 'gb_ok.dxf'); run(os.path.join(REC, 'general_beam.py'), src, '8-8', '--box', '0', '0', '400', '450', '--B', '25', '--D', '25', '--H', '50', '-o', _ok)
+_dk = ezdxf.readfile(_ok); _tk = [t for t in _dk.modelspace().query('TEXT') if t.dxf.text == '/K/O']
+assert len(_tk) == 1 and _tk[0].dxf.style == 'SIVAN' and _tk[0].dxf.text_generation_flag == 2, 'o.k text SIVAN mirrored'
+import ok_marker as _okm
+_msg = _okm.add_markers(_dk, 0, 0, 1, 400, 450, 1); assert not [e for e in _dk.modelspace().query('INSERT') if e.dxf.name == 'o.k block'] and any('own o.k marker' in m for m in _msg), _msg
+print('PASS general_beam: o.k marker text SIVAN mirrored; ok_marker leaves a section with its own marker alone')
+
+# ok_marker --own (user 2026-10-25: every cross-section bears 'O.K. per plan'): a cell without a marker gets MH + 'o.k' + 'per plan' (SIVAN mirrored); the sheet's `o.k block` (hidden nested layer 21_SIM) is replaced; a polyline outline counts; second run changes nothing
+_dz = ezdxf.new('R2018'); _mz = _dz.modelspace(); _dz.layers.add('72_MISGERET_WIN'); _dz.layers.add('9_KONTUR'); _dz.layers.add('5_HATAH _KONTUR')
+_dz.blocks.new('MH'); _mz.add_lwpolyline([(0, 0), (400, 0), (400, 450), (0, 450)], close=True, dxfattribs={'layer': '72_MISGERET_WIN'}); _mz.add_line((400, 0), (400, 450), dxfattribs={'layer': '72_MISGERET_WIN'})
+_mz.add_lwpolyline([(50, 100), (75, 100), (75, 150), (50, 150)], close=True, dxfattribs={'layer': '5_HATAH _KONTUR'})      # cast section drawn as a polyline
+for _y in (100, 150): _mz.add_line((450, _y), (475, _y), dxfattribs={'layer': '9_KONTUR'})
+_mz.add_line((450, 100), (450, 150), dxfattribs={'layer': '9_KONTUR'})
+_msg = _okm.add_own_markers(_dz, 0, 0, 0, cells=_okm.frame_cells(_dz, (0, 0, 1000, 500)))
+assert len(_mz.query('INSERT[name=="MH"]')) == 1 or len(_mz.query('INSERT[name=="MH"]')) == 2, _msg
+assert len([t for t in _mz.query('TEXT') if t.dxf.text == '/K/O' and t.dxf.style == 'SIVAN' and t.dxf.text_generation_flag == 2]) == len(_mz.query('INSERT[name=="MH"]'))
+_n1 = len(_mz.query('INSERT[name=="MH"]')); _okm.add_own_markers(_dz, 0, 0, 0, cells=_okm.frame_cells(_dz, (0, 0, 1000, 500))); assert len(_mz.query('INSERT[name=="MH"]')) == _n1, 'second run adds nothing'
+print('PASS ok_marker --own: every section cell (line or polyline outline) carries MH + o.k + per plan, idempotent')

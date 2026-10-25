@@ -35,7 +35,7 @@ Status: **ACTIVE** = use it; **LIB** = imported by other recipes, do not delete 
 | `leader_fit.py FILE --box X Y W H [--dry]` | Shelf = text width, text on its shelf, fork tips on dot centres, orphan shelf gets forks. | ACTIVE |
 | `rebar_color.py FILE --box ..` | Layer colours from his table; clears entity overrides; defines missing layers. | ACTIVE |
 | `mid_note_fit.py FILE [--box ..] [--dry]` | Moves every middle-steel note to the nearest position that overlaps nothing. | ACTIVE |
-| `ok_marker.py FILE --cells X Y N --cell-h H --once K` | The 'OK per plan' `o.k block` ONCE per sheet (asset `assets/o_k_block.dxf` when missing). | ACTIVE |
+| `ok_marker.py FILE --own --box X Y W H` | EVERY section cell of the sheet box (72_MISGERET_WIN frames) gets MH + 'o.k' + 'per plan' (SIVAN); old `o.k block` replaced; a cell with an MH is left alone (sections-workflow.md 5). `--cells .. --once K` = the old once-per-sheet block, superseded. | ACTIVE |
 | `fit_rows.py FILE [--near X Y] [--dry]` | EVERY framed row of the stack: grows too-low rows downward (rows below move), all cells of a row on ONE title line, margins >= 25. Run by sections_round. | ACTIVE |
 | `align_row.py FILE --near X Y` | One framed row only, on ONE title line (superseded by fit_rows for sheets; its +-60 band mixes neighbouring rows). | ACTIVE |
 | `cell_dupes.py FILE [--fix]` | Finds / deletes doubled entities in the framed rows. | ACTIVE |

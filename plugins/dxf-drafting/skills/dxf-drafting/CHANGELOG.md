@@ -274,3 +274,9 @@
 2026-10-25 star_plan.outer_sides (beam at the building edge = no slab on the empty side) + general_beam closed stirrup elevation for H <= 100 (test_sections 1-1/2-2/3-3 clouds); 2-2 conflict: his cross was on the viewer's RIGHT = the inside, geometry says the south (left) side is free - asked him.
 
 2026-10-25 star_orient turns N/S (vertical-beam) pairs clockwise too (east -> S, west -> N); was 'not touched' (user: sections on the plan must all follow a clockwise direction).
+
+2026-10-25 test_sections (6) clouds on the o.k marker: 'o.k' text SIVAN mirrored like 'per plan' (was HEBREW_NEW in 1-1/2-2), extra `o.k block` no longer laid over a section with its own MH; marker x nudges (+6.5 / +3.4 / 0 from the corner) NOT turned into a rule - asked.
+
+2026-10-25 ok_marker --own: every section cell gets MH + o.k + per plan (shlang sheet looked unmarked: the o.k block's MH is on frozen 21_SIM); sections_round uses it with --box (multi-row sheets); cell_geometry reads polyline outlines too.
+
+2026-10-25 level marker stem 5 right of the beam face for every width (was 2.8 / +18.3); ok_marker.clear_markers slides it clear of notes / leaders / text (shlang: 8 collisions -> 0; shifts 21..76 on sections with a left top-bar note).

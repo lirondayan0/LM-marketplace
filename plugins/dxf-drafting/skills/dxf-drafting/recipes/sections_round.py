@@ -83,8 +83,8 @@ def main():
     for rec in ('sivan_text.py', 'leader_fit.py', 'rebar_color.py'): print(' ', rec, run(os.path.join(HERE, rec), f, '--box', *box).strip().splitlines()[-1:])
     if os.path.exists(f + '.slopes.json'): print('  slope_label', run(os.path.join(HERE, 'slope_label.py'), f, '--json', f + '.slopes.json').strip().splitlines()[-4:])      # user 2026-10-22: a sloped slab along the cut gets a label (found from the plan note), after the SIVAN conversion
     print('  mid_note_fit', run(os.path.join(HERE, 'mid_note_fit.py'), f, '--box', *box).strip().splitlines()[-2:])      # user 2026-10-22: the middle-steel note overlaps nothing
-    # 'OK per plan' level marker (user 2026-10-21, 9b): the user's `o.k block` written ONCE per sheet (second section), from his reference marker in the file (or the block definition)
-    print('  ok_marker', run(os.path.join(HERE, 'ok_marker.py'), f, '--cells', x, box[1], nsec, '--cell-h', box[3], '--once', 2 if nsec > 1 else 1).strip().splitlines()[-1:])
+    # 'OK per plan' level marker (user 2026-10-25: EVERY cross-section bears it): MH + 'o.k' + 'per plan' on the beam top of each cell that has none yet
+    print('  ok_marker', run(os.path.join(HERE, 'ok_marker.py'), f, '--own', '--box', *box).strip().splitlines()[-1:])
     # BAR ARRAYS (user 2026-10-21: the reinforcement of the sections is drawn as associative ARRAYS) - LAST write step: AutoCAD (accoreconsole) saves the file
     print('  fit_rows', run(os.path.join(HERE, 'fit_rows.py'), f, '--near', box[0] + 10, box[1] + 10).strip().splitlines()[:-2])      # user 2026-10-22: all sections of a row hang from ONE title line; user 2026-10-24: EVERY row (not only the lowest) holds its sections entirely, frames grow downward
     box = sheet_box(); vbox_ = [box[0], box[1], box[0] + box[2], box[1] + box[3]]      # rows may have grown: the later passes need the new extent
