@@ -280,3 +280,5 @@
 2026-10-25 ok_marker --own: every section cell gets MH + o.k + per plan (shlang sheet looked unmarked: the o.k block's MH is on frozen 21_SIM); sections_round uses it with --box (multi-row sheets); cell_geometry reads polyline outlines too.
 
 2026-10-25 level marker stem 5 right of the beam face for every width (was 2.8 / +18.3); ok_marker.clear_markers slides it clear of notes / leaders / text (shlang: 8 collisions -> 0; shifts 21..76 on sections with a left top-bar note).
+
+2026-10-25 bar_arrays.runs: dots of one array must lie on ONE line (ROW_TOL 0.15; was 0.5 buckets) - shlang slab row (y+0.3) merged with the beam row, AutoCAD moved dots, guard refused, 169 dots stayed loose; now 130 arrays, 0 loose.

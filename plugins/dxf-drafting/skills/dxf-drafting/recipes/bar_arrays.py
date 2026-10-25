@@ -39,6 +39,9 @@ def dots_in(doc, box):
     return out
 
 
+ROW_TOL = 0.15
+
+
 def runs(items, same, pos, tol=0.35):
     g = defaultdict(list)
     for it in items: g[round(same(it) / 0.5)].append(it)
@@ -54,10 +57,10 @@ def runs(items, same, pos, tol=0.35):
             best = None
             for j in range(i + 1, len(its)):
                 st = pos(its[j]) - pos(its[i])
-                if st < 2: continue
+                if st < 2 or abs(same(its[j]) - same(its[i])) > ROW_TOL: continue      # a row is ONE line: dots 0.3 apart in y (beam top row next to a slab row, shlang 2026-10-25) are different rows - the array puts every dot on the first one's line
                 run = [its[i], its[j]]; nxt = pos(its[j]) + st
                 for k in range(j + 1, len(its)):
-                    if abs(pos(its[k]) - nxt) < tol: run.append(its[k]); nxt += st
+                    if abs(pos(its[k]) - nxt) < tol and abs(same(its[k]) - same(its[i])) <= ROW_TOL: run.append(its[k]); nxt += st
                     elif pos(its[k]) > nxt + tol: break
                 if len(run) >= 3: best = run
                 break

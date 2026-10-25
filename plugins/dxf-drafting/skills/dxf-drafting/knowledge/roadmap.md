@@ -37,4 +37,4 @@ Model, status and TODO list: `conventions/sections-xref.md` section 6 (app v1.1.
 
 - RESOLVED 2026-10-25: marker stem 5 right of the face, slid right only when it would touch other text / leaders (user's answer to the test_sections (6) nudges).
 
-- Open (2026-10-25): shlang original, current code: bar_arrays refuses ('dot positions changed', greedy match fails after AutoCAD arrays; rows with dots 0.3 apart in y, cell 2 / right-hand cells) so the dots stay loose; the same file passed in the 20:37 app job and in skill 1.1.1. Not caused by edge-beam / closed-stirrup / clockwise changes alone (each switched off separately still fails). Investigate same_dots (greedy matching) before the next release.
+- RESOLVED 2026-10-25: shlang 'dot positions changed' = slab row and beam row 0.3 apart in y merged into one array (bar_arrays.ROW_TOL).

@@ -1075,3 +1075,10 @@ assert len(_mz.query('INSERT[name=="MH"]')) == 1 or len(_mz.query('INSERT[name==
 assert len([t for t in _mz.query('TEXT') if t.dxf.text == '/K/O' and t.dxf.style == 'SIVAN' and t.dxf.text_generation_flag == 2]) == len(_mz.query('INSERT[name=="MH"]'))
 _n1 = len(_mz.query('INSERT[name=="MH"]')); _okm.add_own_markers(_dz, 0, 0, 0, cells=_okm.frame_cells(_dz, (0, 0, 1000, 500))); assert len(_mz.query('INSERT[name=="MH"]')) == _n1, 'second run adds nothing'
 print('PASS ok_marker --own: every section cell (line or polyline outline) carries MH + o.k + per plan, idempotent')
+
+# bar_arrays.runs: a row is ONE line - a slab row (y 100.4, step 26) touching a beam row (y 100.1, step 6) at the same x must not merge (shlang 2026-10-25: AutoCAD put the beam dots on the slab line -> 'dot positions changed')
+import bar_arrays as _ba
+_dots = [(f's{i}', 0 + 26 * i, 100.4) for i in range(3)] + [(f'b{i}', 52 + 6 * i, 100.1) for i in range(8)]
+_rows, _left = _ba.runs(_dots, lambda t: t[2], lambda t: t[1])
+assert sorted(len(r) for r in _rows) == [3, 8] and not _left and all(len({round(t[2], 1) for t in r}) == 1 for r in _rows), ([[t[0] for t in r] for r in _rows], _left)
+print('PASS bar_arrays: rows 0.3 apart in y stay separate arrays')
