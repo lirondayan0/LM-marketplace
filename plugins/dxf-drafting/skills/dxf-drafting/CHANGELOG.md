@@ -272,3 +272,5 @@
 - 2026-10-25: XREF role layers shared in dxflib.XREF_ROLE_LAYERS (beam / wall / floor; xref_overlay, _cores, _extend_bars, _extend_dots, _junction use them): 3600-CON-11 now 10 of 13 sections drawable (mapping UNVERIFIED). Not released.
 
 2026-10-25 star_plan.outer_sides (beam at the building edge = no slab on the empty side) + general_beam closed stirrup elevation for H <= 100 (test_sections 1-1/2-2/3-3 clouds); 2-2 conflict: his cross was on the viewer's RIGHT = the inside, geometry says the south (left) side is free - asked him.
+
+2026-10-25 star_orient turns N/S (vertical-beam) pairs clockwise too (east -> S, west -> N); was 'not touched' (user: sections on the plan must all follow a clockwise direction).

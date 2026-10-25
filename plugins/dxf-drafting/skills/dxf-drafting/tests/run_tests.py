@@ -1044,3 +1044,14 @@ _do.blocks.new('x'); _p1 = _mo.add_blockref('x', (-80, 250.0)); _q1 = _mo.add_bl
 import star_plan as _spo
 assert _spo.outer_sides(_do, _p1, _q1, 'N', (80, 105)) == {'R'}, 'east of the beam is empty -> right side free; west has the neighbouring beams'
 print('PASS star_plan.outer_sides: beam at the building edge has no slab on the empty side')
+
+# star_orient: vertical beams are turned clockwise too (user 2026-10-25): the east pair (looking N) -> S, the west pair (looking S) -> N
+_dv = ezdxf.new('R2018'); _bv = _dv.blocks.new('hat'); _bv.add_line((0, 0), (40, 0)); _bv.add_attdef('A', (14.66, 25.99), dxfattribs={'height': 22}); _dv.layers.add('automatic_sections'); _mv = _dv.modelspace()
+for _x, _rot in ((800, 0), (-800, 0)):
+    for _dx, _s in ((-92, 1), (92, -1)):
+        _rr = _mv.add_blockref('hat', (_x + _dx, 0), dxfattribs={'layer': 'automatic_sections', 'rotation': _rot, 'xscale': 1.328 * _s, 'yscale': 1.328}); _rr.add_attrib('A', '*', (_x + _dx, 30), dxfattribs={'height': 24})
+_fv = os.path.join(tmp, 'star_v.dxf'); _dv.saveas(_fv)
+r = subprocess.run([sys.executable, os.path.join(REC, 'star_orient.py'), _fv], capture_output=True, text=True, encoding='utf-8'); assert r.returncode == 0, r.stderr
+_hv = [e for e in ezdxf.readfile(_fv).modelspace().query('INSERT') if e.dxf.name == 'hat']
+assert all(round(e.dxf.rotation) == 180 for e in _hv if e.dxf.insert.x > 0) and all(round(e.dxf.rotation) == 0 for e in _hv if e.dxf.insert.x < 0), 'east pair looks S, west pair looks N'
+print('PASS star_orient: vertical beams are turned clockwise (east -> S, west -> N)')

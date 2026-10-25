@@ -1,6 +1,6 @@
 """Recipe: orient the user's star section marks (`hat` pairs on layer `automatic_sections`, any case; old name `claude_sections`) CLOCKWISE around the plan (user 2026-10-15).
   python star_orient.py FILE [--dry] [--max-y Y]      (--max-y: ignore pairs above Y, e.g. a second plan copy)
-A pair that looks E/W (a horizontal beam) is turned so it looks along the clockwise tangent about the centroid of the marked pairs: north side -> E, south side -> W. Pairs looking N/S (vertical beams) are NOT touched (user 2026-10-15: the east wall-beam 6-6 with the ledge slab on its right keeps its N view) (slab ends up on the RIGHT of the view for edge beams;
+A pair that looks E/W (a horizontal beam) is turned so it looks along the clockwise tangent about the centroid of the marked pairs: north side -> E, south side -> W. Pairs looking N/S (vertical beams) ARE turned too since 2026-10-25 (east side -> S, west -> N; was: not touched, user 2026-10-15: the east wall-beam 6-6 with the ledge slab on its right keeps its N view) (slab ends up on the RIGHT of the view for edge beams;
 this is also the old convention 'north edges look E, south edges look W'). Flipping = rotation + swapped mirror signs (LAYOUT of cut_marks.py); insert points stay. Snapshot first. UNVERIFIED reading of 'clockwise'."""
 import argparse, math, os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'scripts'))
@@ -69,7 +69,7 @@ def main():
         if cur in 'EW' and abs(my - cy) < 1e-6: new = cur
         if cur in 'NS' and abs(mx - cx) < 1e-6: new = cur
         if cur in 'EW' and new in 'NS': new = 'E' if my >= cy else 'W'
-        if cur in 'NS': new = cur     # N/S-looking pairs are interior wall-beams the user places themself (6-6: slab on the RIGHT = east when looking N); only E/W pairs were taught
+        if cur in 'NS' and new in 'EW': new = 'S' if mx >= cx else 'N'      # user 2026-10-25 (test_sections 1-1 / 3-3: east beams looked N): vertical beams are turned CLOCKWISE too - east side looks S, west side N (slab on the RIGHT of the view for edge beams)
         print(f'pair at ({mx:.0f},{my:.0f}) looks {cur} -> {new}' + ('' if new != cur else ' (kept)'))
         if new == cur:
             if cur in a.tidy and cur in 'EW':
